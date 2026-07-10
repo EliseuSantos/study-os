@@ -5,7 +5,7 @@ node_modules
 dist
 build
 bun.lock
-ds/
+packages/design/
 apps/worker/worker-configuration.d.ts
 apps/pwa/cypress/screenshots
 apps/pwa/cypress/videos

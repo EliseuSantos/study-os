@@ -1,0 +1,11 @@
+{
+  "name": "@studyos/design",
+  "version": "0.0.1",
+  "private": true,
+  "description": "StudyOS design system: CSS tokens (dark default, light via [data-theme]), self-hosted fonts and brand guidelines",
+  "exports": {
+    "./styles.css": "./styles.css",
+    "./tokens/*": "./tokens/*",
+    "./fonts/*": "./assets/fonts/*"
+  }
+}

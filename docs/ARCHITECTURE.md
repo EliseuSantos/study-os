@@ -16,11 +16,12 @@ UI (Svelte 5 runes)
 
 | Path                  | What                                                                                                                                                              | Platform deps                              |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| `apps/pwa`            | SvelteKit SPA (adapter-static, no SSR), Tailwind v4 themed by `ds/` tokens                                                                                        | browser                                    |
+| `apps/pwa`            | SvelteKit SPA (adapter-static, no SSR), Tailwind v4 themed by `@studyos/design` tokens                                                                                        | browser                                    |
 | `apps/worker`         | Hono on Cloudflare Workers: `/sync/*`, content proxies (YouTube, RSS, Firecrawl web search/reader with a monthly D1 credit budget), sharing, serves the built PWA | workerd                                    |
 | `packages/db`         | `schema.sql` migrations, `DbDriver` seam, repo layer, LWW sync engine + server core                                                                               | none in `src/` (adapters are deep exports) |
 | `packages/shared`     | row types, sync wire types, uuidv7 ids, constants                                                                                                                 | none                                       |
 | `packages/core`       | pure domain logic: fsrs / planner / outline-parser / stats (stubs until M2)                                                                                       | none                                       |
+| `packages/design`     | design-system source of truth: CSS tokens (dark default + `[data-theme="light"]`), self-hosted fonts, brand guidelines | none (plain CSS/assets)                    |
 | `packages/connectors` | content source connectors (M4)                                                                                                                                    | none                                       |
 
 Packages are consumed as TypeScript source (`exports: ./src/index.ts`) — no build step

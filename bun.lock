@@ -21,6 +21,7 @@
         "@studyos/connectors": "workspace:*",
         "@studyos/core": "workspace:*",
         "@studyos/db": "workspace:*",
+        "@studyos/design": "workspace:*",
         "@studyos/shared": "workspace:*",
         "bits-ui": "^2.11.4",
         "uqr": "^0.1.3",
@@ -74,6 +75,10 @@
       "devDependencies": {
         "@types/bun": "^1.3.0",
       },
+    },
+    "packages/design": {
+      "name": "@studyos/design",
+      "version": "0.0.1",
     },
     "packages/shared": {
       "name": "@studyos/shared",
@@ -335,6 +340,8 @@
     "@studyos/core": ["@studyos/core@workspace:packages/core"],
 
     "@studyos/db": ["@studyos/db@workspace:packages/db"],
+
+    "@studyos/design": ["@studyos/design@workspace:packages/design"],
 
     "@studyos/shared": ["@studyos/shared@workspace:packages/shared"],
 

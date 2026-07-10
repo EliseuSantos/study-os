@@ -15,6 +15,7 @@
     "@journeyapps/wa-sqlite": "^1.7.0",
     "@studyos/connectors": "workspace:*",
     "@studyos/core": "workspace:*",
+    "@studyos/design": "workspace:*",
     "@studyos/db": "workspace:*",
     "@studyos/shared": "workspace:*",
     "bits-ui": "^2.11.4",

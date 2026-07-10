@@ -15,7 +15,7 @@
     "**/build",
     "**/.turbo",
     "**/.wrangler",
-    "ds/**",
+    "packages/design/**",
     "**/worker-configuration.d.ts"
   ]
 }
