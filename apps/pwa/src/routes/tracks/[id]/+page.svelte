@@ -12,6 +12,8 @@
   import CardsPanel from './CardsPanel.svelte';
   import CycleEditor from './CycleEditor.svelte';
   import TopicContent from './TopicContent.svelte';
+  import LessonsPanel from './LessonsPanel.svelte';
+  import TrackActions from './TrackActions.svelte';
 
   const trackId = $derived(page.params.id ?? '');
 
@@ -168,5 +170,7 @@
         <p class="type-item mt-3 text-text-soft">selecione um tópico para ver e criar cards.</p>
       {/if}
     </section>
+    <LessonsPanel trackId={track.id} />
+    <TrackActions trackId={track.id} />
   {/if}
 </section>

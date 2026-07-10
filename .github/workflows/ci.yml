@@ -35,6 +35,9 @@ jobs:
       - name: Format check
         run: bun run format:check
 
+      - name: Validate templates
+        run: bun run validate:templates
+
       - name: Typecheck, lint, test, build
         run: bun x turbo typecheck lint test build --cache-dir=.turbo
 

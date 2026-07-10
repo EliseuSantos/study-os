@@ -13,7 +13,8 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "validate:templates": "bun scripts/validate-templates.ts"
   },
   "devDependencies": {
     "oxlint": "^1.62.0",
