@@ -13,7 +13,7 @@ Only weekly recurrence: `FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR,SA,SU` (any subset of 
 
 ## packages/core (stream A)
 
-### planner (extends existing module; keep `QueueItem`/`dailyQueue` compatible or evolve both — planner is consumed only via these contracts after M3)
+### planner (M2's `QueueItem`/`dailyQueue` and the `planDay`/stats stubs were removed — verified unconsumed outside core; planner is consumed only via these contracts after M3)
 
 ```ts
 export interface RoutineSpec {
@@ -66,14 +66,16 @@ export function cycleNext(
   pointer: number,
 ): { slot: CycleSlotSpec; nextPointer: number } | null;
 
-// replan(now): overdue plan-days are redistributed strictly forward over the next
+// replan(todayDay): overdue plan-days are redistributed strictly forward over the next
 // occurrences (idempotent: same inputs -> same outputs; never emits past days).
-// M3 keeps plan blocks derived (not persisted), so replan == allocateSchedule starting
-// from today — the function exists to make that policy explicit and testable.
+// M3 keeps plan blocks derived (not persisted), so replan == allocateSchedule over
+// [todayDay, todayDay + horizonDays - 1] — the function exists to make that policy
+// explicit and testable. `todayDay` is epoch ms of TODAY'S LOCAL MIDNIGHT, normalized
+// by the caller (core cannot derive a local midnight from a raw timestamp).
 export function replan(
   routines: RoutineSpec[],
   topics: PlannerTopic[],
-  now: number,
+  todayDay: number,
   horizonDays: number,
 ): PlanBlock[];
 
@@ -90,7 +92,9 @@ export interface TodayItem {
   sort: number;
 }
 export function buildToday(inputs: TodayInputs, now: number): TodayItem[];
-// order: overdue reviews, due reminders, today's blocks (by start), fresh reviews
+// order: overdue reviews (dueAt < now), due reminders (notify_at <= now; not-yet-due
+// reminders are omitted), today's blocks (input array order — allocateSchedule emits
+// them per-day in start_time order), fresh reviews (dueAt null or >= now, undated last)
 ```
 
 ### stats
@@ -120,6 +124,7 @@ export function currentStreak(perDay: { day: number; seconds: number }[], now: n
 export function accuracyByTrack(
   s: SessionSlice[],
 ): { track_id: string | null; total: number; correct: number; pct: number | null }[];
+// pct is 0..100 over sessions with questions_total > 0; null when a track has none
 export function periodComparison(
   s: SessionSlice[],
   now: number,
@@ -133,7 +138,9 @@ export function weakTopics(
   sessions: SessionSlice[],
   limit?: number,
 ): WeakTopic[];
-// low ratings (1-2 share) x low net time; only topics with >= 3 reviews; limit default 5
+// low ratings (1-2 share, weight 0.7) x normalized inverse net time (weight 0.3);
+// only topics with >= 3 reviews; limit default 5. M3 limitation: only reviews with
+// ref_kind 'topic' are scored — card reviews carry no card->topic mapping in the slice.
 ```
 
 ## packages/db (stream B)

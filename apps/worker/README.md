@@ -1,7 +1,8 @@
 # @studyos worker
 
-Cloudflare Worker serving the sync API (`/sync/push`, `/sync/pull`, `/health`) and the PWA
-static assets. Thin HTTP shell around `@studyos/db/sync/server-core`; storage is D1.
+Cloudflare Worker serving the sync API (`/sync/push`, `/sync/pull`, `/health`), the web
+push endpoints, the reminder cron, and the PWA static assets. Thin HTTP shell around
+`@studyos/db/sync/server-core`; storage is D1.
 
 ## Endpoints
 
@@ -10,6 +11,36 @@ See `docs/SYNC.md` for the frozen wire contract.
 - `GET /health` - no auth, `{ "ok": true }`
 - `POST /sync/push` - `Authorization: Bearer <SYNC_TOKEN>`, body `PushRequest`
 - `GET /sync/pull?since=<ms>&device=<device_id>` - same auth, returns `PullResponse`
+- `POST /push/subscribe` - same auth, body `{ device_id, endpoint, p256dh, auth }`,
+  upserts into `push_subscriptions` keyed by `device_id`
+- `GET /push/vapid` - same auth, returns `{ publicKey }` for `pushManager.subscribe`
+
+## Web push
+
+A cron trigger (`*/5 * * * *`, see `wrangler.jsonc`) runs `src/cron.ts`: if any reminder
+came due in the last 5 minutes, every subscription gets a **payload-less** web push
+(RFC 8030) signed with a VAPID JWT (RFC 8292, ES256 via WebCrypto). There is no payload
+encryption in M3 - the service worker shows a generic notification. Subscriptions that
+answer 404/410 are deleted.
+
+Three secrets drive it (exact formats matter):
+
+- `VAPID_PUBLIC_KEY` - the raw **uncompressed P-256 point** (65 bytes, starts with
+  `0x04`), base64url-encoded without padding. Sent to browsers as
+  `applicationServerKey` and in the `k=` parameter of the `Authorization` header.
+- `VAPID_PRIVATE_KEY` - the matching private key as a **JWK JSON string**, e.g.
+  `{"kty":"EC","crv":"P-256","d":"...","x":"...","y":"...","ext":true,"key_ops":["sign"]}`
+  (`d`/`x`/`y` base64url). Imported with `crypto.subtle.importKey('jwk', ...)`.
+- `VAPID_SUBJECT` - contact URI for the push service, `mailto:` or `https:`.
+
+Generate a pair (prints all three lines ready to paste):
+
+```sh
+bun run scripts/gen-vapid.ts
+```
+
+Locally they live in `.dev.vars`; in production set them with
+`bun x wrangler secret put VAPID_PUBLIC_KEY` (and `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`).
 
 ## Local development
 
