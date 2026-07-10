@@ -2,6 +2,7 @@
   import '../app.css';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
+  import GlobalSearch from '$lib/components/GlobalSearch.svelte';
   import { requestPersistence } from '$lib/db/client';
   import { registerServiceWorker } from '$lib/push/register';
   import { startSyncLifecycle } from '$lib/sync/index.svelte';
@@ -14,6 +15,7 @@
     { href: '/tracks', label: 'trilhas' },
     { href: '/routines', label: 'rotina' },
     { href: '/study', label: 'estudar' },
+    { href: '/library', label: 'biblioteca' },
     { href: '/reminders', label: 'lembretes' },
     { href: '/stats', label: 'stats' },
   ] as const;
@@ -80,6 +82,7 @@
       </nav>
 
       <span class="ml-auto flex items-center gap-4">
+        <GlobalSearch />
         {#if !online}
           <span class="type-meta flex items-center gap-1.5 text-text-low">
             <span class="offline-dot" aria-hidden="true"></span>

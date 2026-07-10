@@ -18,6 +18,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@journeyapps/wa-sqlite": "^1.7.0",
+        "@studyos/connectors": "workspace:*",
         "@studyos/core": "workspace:*",
         "@studyos/db": "workspace:*",
         "@studyos/shared": "workspace:*",

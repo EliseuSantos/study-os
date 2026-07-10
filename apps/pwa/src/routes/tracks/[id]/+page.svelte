@@ -11,6 +11,7 @@
   import OutlineImport from './OutlineImport.svelte';
   import CardsPanel from './CardsPanel.svelte';
   import CycleEditor from './CycleEditor.svelte';
+  import TopicContent from './TopicContent.svelte';
 
   const trackId = $derived(page.params.id ?? '');
 
@@ -161,6 +162,7 @@
           {cards}
           onadd={(front, back) => store?.addCard(front, back) ?? Promise.resolve()}
         />
+        <TopicContent topicId={selectedTopic.id} />
       {:else}
         <h2 class="type-label text-text-low">cards</h2>
         <p class="type-item mt-3 text-text-soft">selecione um tópico para ver e criar cards.</p>
