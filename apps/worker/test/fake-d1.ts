@@ -2,7 +2,7 @@ import type { Row, SqlValue } from '@studyos/db';
 import { Database } from 'bun:sqlite';
 import type { D1DatabaseLike, D1PreparedStatementLike } from '../src/env';
 
-const MIGRATION_PATH = new URL('../../../packages/db/migrations/0001_init.sql', import.meta.url)
+const MIGRATIONS_DIR = new URL('../../../packages/db/migrations/', import.meta.url)
   .pathname;
 
 class FakePrepared implements D1PreparedStatementLike {
@@ -62,6 +62,8 @@ export class FakeD1 implements D1DatabaseLike {
 }
 
 export async function createFakeD1(): Promise<FakeD1> {
-  const migrationSql = await Bun.file(MIGRATION_PATH).text();
-  return new FakeD1(migrationSql);
+  const glob = new Bun.Glob('*.sql');
+  const files = (await Array.fromAsync(glob.scan({ cwd: MIGRATIONS_DIR }))).sort();
+  const parts = await Promise.all(files.map((f) => Bun.file(`${MIGRATIONS_DIR}${f}`).text()));
+  return new FakeD1(parts.join('\n'));
 }

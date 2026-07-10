@@ -26,14 +26,17 @@ const EXPECTED_TABLES = [
   'server_oplog',
   'push_subscriptions',
   'track_shares',
+  'proxy_usage',
 ];
 
-test('schema applies cleanly and sets user_version to 1', async () => {
+test('schema applies cleanly and sets user_version to the latest migration', async () => {
   const db = bunSqliteDriver(new Database(':memory:'));
-  await migrate(db, await loadMigrations());
+  const migrations = await loadMigrations();
+  const latest = Math.max(...migrations.map((m) => m.version));
+  await migrate(db, migrations);
 
   const [row] = await db.exec('PRAGMA user_version');
-  expect(row?.['user_version']).toBe(1);
+  expect(row?.['user_version']).toBe(latest);
 
   const rows = await db.exec(
     "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
@@ -46,9 +49,10 @@ test('schema applies cleanly and sets user_version to 1', async () => {
 test('re-running migrate is a no-op', async () => {
   const db = bunSqliteDriver(new Database(':memory:'));
   const migrations = await loadMigrations();
+  const latest = Math.max(...migrations.map((m) => m.version));
   await migrate(db, migrations);
   await migrate(db, migrations);
 
   const [row] = await db.exec('PRAGMA user_version');
-  expect(row?.['user_version']).toBe(1);
+  expect(row?.['user_version']).toBe(latest);
 });

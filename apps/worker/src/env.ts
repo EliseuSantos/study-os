@@ -41,4 +41,8 @@ export interface Env {
   VAPID_SUBJECT: string;
   /** YouTube Data API v3 key; optional — /proxy/youtube/search answers 503 without it. */
   YOUTUBE_API_KEY?: string;
+  /** Firecrawl API key; optional — /proxy/firecrawl/* answers 503 without it. */
+  FIRECRAWL_API_KEY?: string;
+  /** Monthly credit ceiling for the Firecrawl free plan; defaults to 1000. */
+  FIRECRAWL_MONTHLY_CREDITS?: string;
 }

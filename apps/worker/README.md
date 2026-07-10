@@ -45,6 +45,24 @@ behind the `src/cache.ts` seam so bun tests can inject a fake):
 `bun x wrangler secret put YOUTUBE_API_KEY` in production (an API key restricted to the
 YouTube Data API v3 is enough — no OAuth).
 
+### Web search & article reader (Firecrawl)
+
+Two more bearer-auth'd endpoints in `src/firecrawl.ts` back the library's `web` source,
+sized for the Firecrawl **free plan** (1,000 credits/month, no rollover):
+
+- `/proxy/firecrawl/search?q=` — `POST /v2/search` with `limit: 10` (2 credits), mapped
+  to `{ items: { url, title, description }[] }`. Cached 6h by normalized query.
+- `/proxy/firecrawl/scrape?url=` — `POST /v2/scrape` (`formats: ['markdown']`,
+  `onlyMainContent`, 1 credit), returns `{ url, title, markdown }` for the in-app
+  reader. Same https-only/private-host rules as `/proxy/rss`. Cached **7 days** —
+  articles rarely change and every cache hit is a credit saved.
+
+A monthly counter in D1 (`proxy_usage`, migration `0002`) is charged only on real API
+calls (cache hits are free) and fails closed: past the ceiling the endpoints answer
+`429 { "error": "firecrawl monthly limit reached" }` and the PWA shows a calm note until
+the month turns. `FIRECRAWL_API_KEY` is optional (503 without it, source hidden);
+`FIRECRAWL_MONTHLY_CREDITS` overrides the default 1000 if you are on a paid plan.
+
 ## Track sharing
 
 Teacher mode shares a track as a `.studyos.json` snapshot (`docs/M5-CONTRACTS.md`), served

@@ -108,7 +108,7 @@ export const handleYoutubeTranscript: Handler<{ Bindings: Env }> = async (c) => 
   return res;
 };
 
-function isBlockedHost(hostname: string): boolean {
+export function isBlockedHost(hostname: string): boolean {
   const host = hostname.toLowerCase();
   return (
     host === 'localhost' ||
