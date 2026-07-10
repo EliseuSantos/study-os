@@ -2,12 +2,15 @@
   import { untrack } from 'svelte';
   import { SvelteSet } from 'svelte/reactivity';
   import { page } from '$app/state';
+  import { getOrCreateDeviceId, updateTrack } from '@studyos/db';
+  import { getDb } from '$lib/db/client';
   import { createTrackDetailStore, type TrackDetailStore } from '$lib/stores/tracksDetail.svelte';
   import { buildTopicTree, type TreeActions } from './tree';
   import TopicNode from './TopicNode.svelte';
   import TopicForm from './TopicForm.svelte';
   import OutlineImport from './OutlineImport.svelte';
   import CardsPanel from './CardsPanel.svelte';
+  import CycleEditor from './CycleEditor.svelte';
 
   const trackId = $derived(page.params.id ?? '');
 
@@ -49,6 +52,16 @@
       openFormId = 'root';
     },
   };
+
+  function setMode(mode: 'schedule' | 'cycle') {
+    if (track === null || track.mode === mode) return;
+    void (async () => {
+      const db = await getDb();
+      const deviceId = await getOrCreateDeviceId(db);
+      // The db worker broadcasts tables-changed ['tracks'], refreshing trackLive.
+      await updateTrack(db, deviceId, trackId, { mode });
+    })();
+  }
 </script>
 
 <svelte:head>
@@ -76,6 +89,36 @@
   {:else}
     <p class="type-label mt-6 text-text-low">trilha</p>
     <h1 class="type-h1 mt-2 text-text-hi">{track.title}</h1>
+
+    <div
+      data-testid="track-mode-toggle"
+      role="group"
+      aria-label="modo da trilha"
+      class="mt-4 inline-flex overflow-hidden rounded-base border border-border"
+    >
+      <button
+        type="button"
+        aria-pressed={track.mode !== 'cycle'}
+        onclick={() => setMode('schedule')}
+        class="type-meta cursor-pointer px-3 py-1.5 transition-colors duration-(--dur-base) ease-brand {track.mode !==
+        'cycle'
+          ? 'bg-surface-2 text-text-hi'
+          : 'text-text-mid hover:text-text-hi'}"
+      >
+        cronograma
+      </button>
+      <button
+        type="button"
+        aria-pressed={track.mode === 'cycle'}
+        onclick={() => setMode('cycle')}
+        class="type-meta cursor-pointer border-l border-hairline px-3 py-1.5 transition-colors duration-(--dur-base) ease-brand {track.mode ===
+        'cycle'
+          ? 'bg-surface-2 text-text-hi'
+          : 'text-text-mid hover:text-text-hi'}"
+      >
+        ciclo
+      </button>
+    </div>
 
     <h2 class="type-label mt-10 text-text-low">
       tópicos{topics.length > 0 ? ` · ${topics.length}` : ''}
@@ -105,6 +148,10 @@
       <p class="type-item mt-2 text-text-soft">
         nenhum tópico ainda — importe um edital ou crie o primeiro.
       </p>
+    {/if}
+
+    {#if track.mode === 'cycle'}
+      <CycleEditor trackId={track.id} {topics} />
     {/if}
 
     <section class="mt-12">

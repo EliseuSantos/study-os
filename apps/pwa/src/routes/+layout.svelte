@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { requestPersistence } from '$lib/db/client';
+  import { registerServiceWorker } from '$lib/push/register';
   import { startSyncLifecycle } from '$lib/sync/index.svelte';
   import type { Snippet } from 'svelte';
 
@@ -11,7 +12,10 @@
   const NAV = [
     { href: '/', label: 'hoje' },
     { href: '/tracks', label: 'trilhas' },
+    { href: '/routines', label: 'rotina' },
     { href: '/study', label: 'estudar' },
+    { href: '/reminders', label: 'lembretes' },
+    { href: '/stats', label: 'stats' },
   ] as const;
 
   function isActive(href: string): boolean {
@@ -29,6 +33,7 @@
     window.addEventListener('online', update);
     window.addEventListener('offline', update);
     void requestPersistence();
+    registerServiceWorker();
     const stopSync = startSyncLifecycle();
     return () => {
       window.removeEventListener('online', update);
