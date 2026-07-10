@@ -1,0 +1,25 @@
+schema: spec-driven
+
+context: |
+  StudyOS — open-source (AGPL-3.0), local-first study platform (pt-BR) for exam
+  candidates and teachers. Read CLAUDE.md at the repo root first: it holds the
+  architecture map, commands, hard rules and scope vetoes. Non-negotiables that
+  shape every artifact:
+  - All user data in on-device SQLite (wa-sqlite/OPFS); fully functional offline.
+  - DB access only through packages/db repos; synced writes go through the oplog
+    invariant (localWrite, atomic batch); settings/topic_deps/review_logs never sync.
+  - Styling only via @studyos/design tokens; UI copy pt-BR sentence case, calm tone;
+    no icons/emoji. New UI declares data-testids in the spec; Cypress asserts them.
+  - Free-tier discipline: cache aggressively, budget external APIs (D1 proxy_usage),
+    fail closed with calm notes.
+  - Tooling locked: Bun, Turborepo, oxlint, bun test, Cypress (Chromium). No Anki
+    importer, no TTS (owner veto).
+
+rules:
+  proposal:
+    - Include a "Non-goals" section
+    - UI-facing changes must list their data-testids and literal pt-BR copy for empty/error states
+  specs:
+    - Wire formats, cache TTLs and budget costs are part of the requirement, not prose
+  tasks:
+    - Every task ends with the verification command that proves it (bun test file or cypress spec)

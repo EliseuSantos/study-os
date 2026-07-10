@@ -18,7 +18,7 @@ interface YoutubeSearchUpstream {
   }[];
 }
 
-/** Frozen wire format (specs/content-connectors.md). */
+/** Frozen wire format (openspec/specs/content-connectors/spec.md). */
 interface YoutubeSearchItem {
   id: string;
   title: string;

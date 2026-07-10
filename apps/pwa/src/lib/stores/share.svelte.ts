@@ -24,7 +24,7 @@ export function slugify(title: string): string {
   return slug === '' ? 'trilha' : slug;
 }
 
-/** Full track rows → portable snapshot (specs/track-snapshot.md). */
+/** Full track rows → portable snapshot (openspec/specs/track-snapshot/spec.md). */
 export async function buildTrackSnapshot(trackId: string): Promise<TrackSnapshot> {
   const db = await getDb();
   const data = await exportTrackData(db, trackId);

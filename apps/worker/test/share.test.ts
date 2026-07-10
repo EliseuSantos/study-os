@@ -10,7 +10,7 @@ const TOKEN = 'test';
 const app = createApp();
 const AUTH = { authorization: `Bearer ${TOKEN}` };
 
-// minimal valid snapshot per specs/track-snapshot.md
+// minimal valid snapshot per openspec/specs/track-snapshot/spec.md
 const SNAPSHOT = {
   format: 'studyos-track',
   version: 1,

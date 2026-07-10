@@ -5,14 +5,20 @@ teachers. All user data lives in on-device SQLite (wa-sqlite over OPFS); a singl
 Cloudflare Worker adds optional sync (D1, LWW), web push, content proxies and track
 sharing (R2). The app must be fully functional offline with zero cloud configured.
 
-## Spec-driven development
+## Spec-driven development (OpenSpec)
 
-Non-trivial features start with a spec in [`specs/`](specs/README.md) (copy
-`specs/TEMPLATE.md`). Freeze the contracts (types, wire formats, testids, acceptance
-criteria) **before** implementing; code against the frozen spec; verify against its
-acceptance criteria; keep the spec updated as living documentation. Living contracts:
-[docs/SYNC.md](docs/SYNC.md), [specs/content-connectors.md](specs/content-connectors.md),
-[specs/track-snapshot.md](specs/track-snapshot.md).
+The repo uses [OpenSpec](https://github.com/Fission-AI/OpenSpec):
+`openspec/specs/<capability>/spec.md` is the current truth; changes are proposed as
+`openspec/changes/<id>/` (proposal + tasks + delta specs) and archived when they land.
+Slash commands: `/opsx:propose` → `/opsx:apply` → `/opsx:archive` (also `explore`,
+`sync`, `update`); CLI via `bun x --package=@fission-ai/openspec openspec <cmd>`
+(`list`, `validate --strict`, `archive`). Project context and artifact rules live in
+`openspec/config.yaml`. Non-trivial features start as a proposal — contracts (types,
+wire formats, testids, pt-BR copy) are frozen in the delta spec **before** code.
+Living specs: [sync-protocol](openspec/specs/sync-protocol/spec.md) (narrative
+companion: [docs/SYNC.md](docs/SYNC.md)),
+[content-connectors](openspec/specs/content-connectors/spec.md),
+[track-snapshot](openspec/specs/track-snapshot/spec.md).
 
 ## Monorepo (Bun workspaces + Turborepo)
 
@@ -81,7 +87,7 @@ cd apps/pwa && bun x cypress run --browser chromium              # e2e (Chromium
 ## Gotchas
 
 - Quiz lesson items: `body_md` JSON `{"q","options","answer"}` with **0-based** answer;
-  UI inputs are 1-based (see specs/track-snapshot.md).
+  UI inputs are 1-based (see openspec/specs/track-snapshot/spec.md).
 - RRULE subset: only `FREQ=WEEKLY;BYDAY=SU..SA` (parser in `packages/core/planner`).
 - Cypress 15 `cy.exec` results expose `exitCode`, not `code`.
 - `GET /share/:id` is public by design; everything else under the worker is
