@@ -89,9 +89,13 @@ recordReview(db, deviceId, args: {
   rating: 1 | 2 | 3 | 4; reviewedAt: number; elapsedMs?: number;
 }): Promise<FsrsStateRow>
 // upserts fsrs_state via localWrite AND inserts review_logs (plain, local-only) in ONE batch
-listDueReviews(db, now, limit?): Promise<DueReview[]>
-// DueReview = { fsrs: FsrsStateRow; title: string } joined to cards.front_md/topics.title;
-// includes NEW cards (no fsrs_state row yet) as due now; excludes soft-deleted refs
+listDueReviews(db, now, limit?): Promise<DueReview[]> // limit defaults to 50
+// DueReview = { refKind: 'card' | 'topic'; refId: string; title: string;
+//   dueAt: number | null; fsrs: FsrsStateRow | null }
+// title joined from cards.front_md/topics.title; excludes soft-deleted refs.
+// Real dues (due_at <= now) come first, ordered by due_at asc; then NEW cards
+// (no fsrs_state row yet — due now) ordered by created_at asc, with
+// dueAt = null and fsrs = null (read paths never write, so nothing is synthesized).
 
 // repo/sessions.ts
 startSession(db, deviceId, { track_id?, topic_id?, type }): Promise<SessionRow>
