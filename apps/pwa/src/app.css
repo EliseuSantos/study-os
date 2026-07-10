@@ -1,0 +1,76 @@
+@import 'tailwindcss';
+@import './styles/fonts.css';
+@import '../../../ds/tokens/colors.css';
+@import '../../../ds/tokens/typography.css';
+@import '../../../ds/tokens/layout.css';
+
+/* Map ds tokens into Tailwind's theme. `inline` makes utilities reference the
+   runtime var, so `[data-theme="light"]` flips colors without extra classes.
+   Self-named keys (e.g. --font-display) are safe: the ds tokens are unlayered
+   and win over Tailwind's layered theme emission. */
+@theme inline {
+  --color-*: initial;
+  --color-bg: var(--bg);
+  --color-bg-deep: var(--bg-deep);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-hairline: var(--hairline);
+  --color-border: var(--border);
+  --color-text-hi: var(--text-hi);
+  --color-text-body: var(--text-body);
+  --color-text-mid: var(--text-mid);
+  --color-text-soft: var(--text-soft);
+  --color-text-low: var(--text-low);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-dim: var(--accent-dim);
+  --color-success: var(--success);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+
+  --radius-base: var(--radius);
+  --radius-micro: var(--radius-micro);
+  --radius-chip: var(--radius-chip);
+
+  --ease-brand: var(--ease);
+}
+
+/* Composite type styles — the `font` shorthand resets font-variant-numeric,
+   so Space Grotesk styles re-assert tabular figures. */
+@utility type-h1 {
+  font: var(--type-h1-mobile);
+  letter-spacing: var(--ls-tight-2);
+  font-variant-numeric: tabular-nums;
+}
+
+@utility type-item {
+  font: var(--type-item);
+}
+
+@utility type-label {
+  font: var(--type-label);
+  letter-spacing: var(--ls-wide-2);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+@utility type-meta {
+  font: var(--type-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+@layer base {
+  body {
+    background-color: var(--bg);
+    color: var(--text-body);
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
+    min-height: 100dvh;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
