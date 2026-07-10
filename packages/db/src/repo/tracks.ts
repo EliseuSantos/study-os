@@ -10,6 +10,13 @@ export interface CreateTrackInput {
   mode?: string;
 }
 
+export interface TrackPatch {
+  title?: string;
+  description?: string | null;
+  mode?: string;
+  goal_id?: string | null;
+}
+
 function rowToTrack(r: Row): TrackRow {
   return {
     id: r['id'] as string,
@@ -58,6 +65,19 @@ export async function listTracks(db: DbDriver): Promise<TrackRow[]> {
     'SELECT * FROM tracks WHERE deleted_at IS NULL ORDER BY created_at DESC, id DESC',
   );
   return rows.map(rowToTrack);
+}
+
+export async function updateTrack(
+  db: DbDriver,
+  deviceId: string,
+  id: string,
+  patch: TrackPatch,
+): Promise<TrackRow | null> {
+  const existing = await getTrack(db, id);
+  if (!existing || existing.deleted_at !== null) return null;
+  const updated = { ...existing, ...patch, updated_at: bumpedTs(existing.updated_at) };
+  await localWrite(db, 'tracks', updated, deviceId);
+  return updated;
 }
 
 export async function deleteTrack(db: DbDriver, deviceId: string, id: string): Promise<void> {

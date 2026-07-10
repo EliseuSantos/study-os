@@ -1,1 +1,5 @@
 SYNC_TOKEN=dev-token
+# Generate the VAPID values with: bun run scripts/gen-vapid.ts
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:dev@example.com

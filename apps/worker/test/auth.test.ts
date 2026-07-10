@@ -13,6 +13,9 @@ beforeEach(async () => {
     DB: await createFakeD1(),
     SYNC_TOKEN: TOKEN,
     ASSETS: { fetch: async () => new Response(null, { status: 404 }) },
+    VAPID_PUBLIC_KEY: 'test-public-key',
+    VAPID_PRIVATE_KEY: '{}',
+    VAPID_SUBJECT: 'mailto:test@example.com',
   };
 });
 

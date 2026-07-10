@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { createTrack, deleteTrack, getTrack, listTracks } from '../src/repo/tracks';
+import { createTrack, deleteTrack, getTrack, listTracks, updateTrack } from '../src/repo/tracks';
 import {
   createTopic,
   createTopicTree,
@@ -38,6 +38,30 @@ test('listTracks hides soft-deleted tracks; deleteTrack appends an oplog row', a
   const row = await db.exec('SELECT deleted_at FROM tracks WHERE id = ?', [gone.id]);
   expect(row[0]?.['deleted_at']).not.toBeNull();
   expect((await db.exec('SELECT * FROM oplog')).length).toBe(3);
+});
+
+test('updateTrack patches fields, bumps updated_at and appends an oplog row', async () => {
+  const db = await freshDb();
+  const track = await createTrack(db, DEVICE, { title: 'antes' });
+
+  const updated = await updateTrack(db, DEVICE, track.id, { title: 'depois', mode: 'cycle' });
+  expect(updated?.title).toBe('depois');
+  expect(updated?.mode).toBe('cycle');
+  expect(updated?.updated_at).toBeGreaterThan(track.updated_at);
+
+  const rows = await db.exec('SELECT title, mode FROM tracks WHERE id = ?', [track.id]);
+  expect(rows[0]?.['title']).toBe('depois');
+  expect(rows[0]?.['mode']).toBe('cycle');
+  expect((await db.exec("SELECT * FROM oplog WHERE tbl = 'tracks'")).length).toBe(2);
+});
+
+test('updateTrack returns null for missing or deleted tracks', async () => {
+  const db = await freshDb();
+  expect(await updateTrack(db, DEVICE, 'nope', { title: 'x' })).toBeNull();
+
+  const track = await createTrack(db, DEVICE, { title: 'gone' });
+  await deleteTrack(db, DEVICE, track.id);
+  expect(await updateTrack(db, DEVICE, track.id, { title: 'x' })).toBeNull();
 });
 
 test('createTopic defaults position to the next sibling index', async () => {

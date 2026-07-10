@@ -20,4 +20,10 @@ export interface Env {
   DB: D1DatabaseLike;
   SYNC_TOKEN: string;
   ASSETS: FetcherLike;
+  /** Raw uncompressed P-256 point, base64url (see README "Web push"). */
+  VAPID_PUBLIC_KEY: string;
+  /** EC P-256 private key as a JWK JSON string (see README "Web push"). */
+  VAPID_PRIVATE_KEY: string;
+  /** mailto: or https: contact, RFC 8292 `sub` claim. */
+  VAPID_SUBJECT: string;
 }
