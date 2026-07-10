@@ -1,0 +1,197 @@
+{
+  "format": "studyos-track",
+  "version": 1,
+  "exported_at": 1767225600000,
+  "track": {
+    "title": "Fundamentos de desenvolvimento",
+    "description": "Trilha introdutória de programação: lógica, estruturas de dados, versionamento com git e o básico da web. Pensada para quem está começando do zero.",
+    "mode": "schedule"
+  },
+  "topics": [
+    {
+      "key": 0,
+      "parent_key": null,
+      "title": "Lógica de programação",
+      "notes_md": "Base de tudo: decompor problemas em passos pequenos e verificáveis antes de escrever qualquer código.",
+      "position": 0
+    },
+    {
+      "key": 1,
+      "parent_key": 0,
+      "title": "Variáveis e tipos",
+      "notes_md": "Números, strings e booleanos. Nomear bem uma variável já é metade da clareza do programa.",
+      "position": 0
+    },
+    {
+      "key": 2,
+      "parent_key": 0,
+      "title": "Condicionais e laços",
+      "notes_md": "if/else, while e for. Traçar na mão a execução de um laço é o melhor exercício para iniciantes.",
+      "position": 1
+    },
+    {
+      "key": 3,
+      "parent_key": 0,
+      "title": "Funções",
+      "notes_md": "Parâmetros, retorno e escopo. Uma função deve fazer uma coisa só — e o nome deve dizer qual.",
+      "position": 2
+    },
+    {
+      "key": 4,
+      "parent_key": null,
+      "title": "Estruturas de dados",
+      "notes_md": null,
+      "position": 1
+    },
+    {
+      "key": 5,
+      "parent_key": 4,
+      "title": "Arrays e listas",
+      "notes_md": "Indexação a partir de zero, percorrer, filtrar e transformar coleções.",
+      "position": 0
+    },
+    {
+      "key": 6,
+      "parent_key": 4,
+      "title": "Mapas e conjuntos",
+      "notes_md": "Busca por chave em tempo constante: quando um array deixa de ser a resposta certa.",
+      "position": 1
+    },
+    {
+      "key": 7,
+      "parent_key": null,
+      "title": "Git e versionamento",
+      "notes_md": "Histórico como rede de segurança: commits pequenos, mensagens que explicam o porquê.",
+      "position": 2
+    },
+    {
+      "key": 8,
+      "parent_key": 7,
+      "title": "Commits e branches",
+      "notes_md": null,
+      "position": 0
+    },
+    {
+      "key": 9,
+      "parent_key": 7,
+      "title": "Merge e resolução de conflitos",
+      "notes_md": "Conflito não é erro: é o git pedindo uma decisão humana.",
+      "position": 1
+    },
+    {
+      "key": 10,
+      "parent_key": null,
+      "title": "Web básico",
+      "notes_md": null,
+      "position": 3
+    },
+    {
+      "key": 11,
+      "parent_key": 10,
+      "title": "HTML e CSS",
+      "notes_md": "Semântica primeiro, estilo depois. Um documento bem estruturado é acessível por padrão.",
+      "position": 0
+    },
+    {
+      "key": 12,
+      "parent_key": 10,
+      "title": "HTTP e APIs",
+      "notes_md": "Métodos, códigos de status e o ciclo requisição/resposta. Testar com curl antes de escrever código.",
+      "position": 1
+    }
+  ],
+  "cards": [
+    {
+      "topic_key": 1,
+      "kind": "basic",
+      "front_md": "Qual a diferença entre o número `42` e a string `\"42\"`?",
+      "back_md": "O número participa de aritmética (`42 + 1 = 43`); a string é texto (`\"42\" + \"1\"` concatena para `\"421\"` em muitas linguagens). Tipos diferentes, operações diferentes.",
+      "options_json": null
+    },
+    {
+      "topic_key": 2,
+      "kind": "basic",
+      "front_md": "Quando preferir um laço `while` a um `for`?",
+      "back_md": "Quando o número de repetições **não é conhecido de antemão** — o laço continua enquanto uma condição for verdadeira (ex.: ler entrada até o usuário digitar 'sair').",
+      "options_json": null
+    },
+    {
+      "topic_key": 5,
+      "kind": "quiz",
+      "front_md": "Em um array de 5 elementos indexado a partir de zero, qual é o índice do último elemento?",
+      "back_md": "Índice 4: com base zero, o último elemento fica em `tamanho - 1`.",
+      "options_json": "{\"options\":[\"5\",\"4\",\"1\",\"0\"],\"answer\":1}"
+    },
+    {
+      "topic_key": 8,
+      "kind": "basic",
+      "front_md": "O que faz `git commit` e por que mensagens importam?",
+      "back_md": "Grava um ponto no histórico com as mudanças preparadas (staged). A mensagem deve explicar o **porquê** da mudança — o diff já mostra o quê.",
+      "options_json": null
+    },
+    {
+      "topic_key": 12,
+      "kind": "basic",
+      "front_md": "O que significa um status HTTP `404`? E um `500`?",
+      "back_md": "`404`: o recurso pedido não existe (erro do cliente/rota). `500`: o servidor falhou ao processar uma requisição válida (erro do servidor).",
+      "options_json": null
+    }
+  ],
+  "lessons": [
+    {
+      "key": 0,
+      "title": "Primeiros passos com lógica de programação",
+      "presenter_notes_md": "Começar sem computador: pedir que descrevam o passo a passo de fazer café como se fosse um algoritmo. Usar isso para introduzir sequência, decisão e repetição. O quiz do final fecha a ideia de índice base zero — errar aqui é esperado e vale discutir.",
+      "estimated_duration_min": 40,
+      "position": 0
+    }
+  ],
+  "lesson_items": [
+    {
+      "lesson_key": 0,
+      "topic_key": 0,
+      "kind": "topic",
+      "body_md": null,
+      "position": 0
+    },
+    {
+      "lesson_key": 0,
+      "topic_key": 0,
+      "kind": "note",
+      "body_md": "Um algoritmo é uma receita: entrada, passos bem definidos e um resultado. Três blocos bastam para descrever qualquer programa:\n\n1. **Sequência** — faça A, depois B\n2. **Decisão** — se X, faça A; senão, faça B\n3. **Repetição** — faça A enquanto X for verdadeiro",
+      "position": 1
+    },
+    {
+      "lesson_key": 0,
+      "topic_key": 2,
+      "kind": "note",
+      "body_md": "[Guia MDN: primeiros passos com JavaScript](https://developer.mozilla.org/pt-BR/docs/Learn/JavaScript/First_steps)",
+      "position": 2
+    },
+    {
+      "lesson_key": 0,
+      "topic_key": 2,
+      "kind": "quiz",
+      "body_md": "{\"q\":\"Um laço imprime os números 0, 1, 2 e 3 e para. Quantas vezes o corpo do laço executou?\",\"options\":[\"3\",\"4\",\"5\",\"depende da linguagem\"],\"answer\":1}",
+      "position": 3
+    }
+  ],
+  "content": [
+    {
+      "topic_key": 2,
+      "source": "web",
+      "external_id": null,
+      "url": "https://developer.mozilla.org/pt-BR/docs/Learn/JavaScript/First_steps",
+      "title": "Guia MDN: primeiros passos com JavaScript",
+      "kind": "article"
+    },
+    {
+      "topic_key": 8,
+      "source": "web",
+      "external_id": null,
+      "url": "https://git-scm.com/book/pt-br/v2",
+      "title": "Pro Git (livro, pt-BR)",
+      "kind": "book"
+    }
+  ]
+}

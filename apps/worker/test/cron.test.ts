@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { handleCron } from '../src/cron';
 import type { Env } from '../src/env';
 import { createFakeD1, type FakeD1 } from './fake-d1';
+import { FakeR2 } from './fake-r2';
 
 function base64url(bytes: Uint8Array): string {
   let bin = '';
@@ -45,6 +46,7 @@ beforeEach(async () => {
     DB: db,
     SYNC_TOKEN: 'test',
     ASSETS: { fetch: async () => new Response(null, { status: 404 }) },
+    SHARES: new FakeR2(),
     VAPID_PUBLIC_KEY: base64url(
       new Uint8Array(await crypto.subtle.exportKey('raw', pair.publicKey)),
     ),

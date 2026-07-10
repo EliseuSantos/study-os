@@ -17,6 +17,8 @@ See `docs/SYNC.md` for the frozen wire contract.
 - `GET /proxy/youtube/search?q=<query>` - same auth, see "Content proxy"
 - `GET /proxy/youtube/transcript?id=<videoId>` - same auth, see "Content proxy"
 - `GET /proxy/rss?url=<https url>` - same auth, see "Content proxy"
+- `POST /share` - same auth, body a `.studyos.json` snapshot, see "Track sharing"
+- `GET /share/:id` - **no auth** (students import via link/QR), see "Track sharing"
 
 ## Content proxy
 
@@ -42,6 +44,32 @@ behind the `src/cache.ts` seam so bun tests can inject a fake):
 `YOUTUBE_API_KEY` is optional: set it in `.dev.vars` locally and with
 `bun x wrangler secret put YOUTUBE_API_KEY` in production (an API key restricted to the
 YouTube Data API v3 is enough — no OAuth).
+
+## Track sharing
+
+Teacher mode shares a track as a `.studyos.json` snapshot (`docs/M5-CONTRACTS.md`), served
+from `src/share.ts` with the `SHARES` R2 bucket (`studyos-shares` in `wrangler.jsonc`):
+
+- `POST /share` (bearer) - body is the raw snapshot JSON, capped at 1 MB (413 above it) and
+  validated with `parseSnapshot` from `@studyos/core` (400 `{ "error": "invalid snapshot" }`).
+  The worker computes the deterministic FNV-1a content hash (`snapshotHash`, same function
+  the PWA uses for update detection), builds the id from the first 10 hex of the hash plus
+  4 random hex, gzips the body via `CompressionStream` into R2 at `shares/<id>.json.gz` and
+  records `{ id, version_hash, r2_key, title, created_at }` in the D1 `track_shares` table.
+  Answers `{ id, hash }`.
+- `GET /share/:id` - **public**, no bearer: this is the link/QR students open. Looks the id
+  up in `track_shares`, gunzips the R2 object and answers `{ snapshot, hash }`; 404 when
+  the id is missing from either store. Cached 1h through the same Cache API seam as the
+  content proxy (`src/cache.ts`).
+
+Create the bucket once per account before deploying:
+
+```sh
+bun x wrangler r2 bucket create studyos-shares
+```
+
+Locally `wrangler dev` emulates R2, nothing to provision. Tests inject `test/fake-r2.ts`
+(an in-memory Map with a get counter) as the `SHARES` binding.
 
 ## Web push
 

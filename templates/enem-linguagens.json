@@ -1,0 +1,197 @@
+{
+  "format": "studyos-track",
+  "version": 1,
+  "exported_at": 1767225600000,
+  "track": {
+    "title": "ENEM · linguagens e códigos",
+    "description": "Trilha de linguagens, códigos e suas tecnologias para o ENEM: interpretação de texto, gramática aplicada, literatura e variação linguística.",
+    "mode": "schedule"
+  },
+  "topics": [
+    {
+      "key": 0,
+      "parent_key": null,
+      "title": "Interpretação de texto",
+      "notes_md": "Eixo central da prova: mais da metade das questões depende de leitura atenta e identificação de tese, argumentos e intenção do autor.",
+      "position": 0
+    },
+    {
+      "key": 1,
+      "parent_key": 0,
+      "title": "Gêneros textuais",
+      "notes_md": "Crônica, editorial, charge, tirinha, propaganda. Identificar propósito comunicativo e público-alvo.",
+      "position": 0
+    },
+    {
+      "key": 2,
+      "parent_key": 0,
+      "title": "Funções da linguagem",
+      "notes_md": "Referencial, emotiva, conativa, fática, metalinguística e poética. Associar cada função ao elemento da comunicação em foco.",
+      "position": 1
+    },
+    {
+      "key": 3,
+      "parent_key": 0,
+      "title": "Figuras de linguagem",
+      "notes_md": "Metáfora, metonímia, hipérbole, ironia, antítese e eufemismo aparecem em textos literários e publicitários.",
+      "position": 2
+    },
+    {
+      "key": 4,
+      "parent_key": null,
+      "title": "Gramática aplicada",
+      "notes_md": "No ENEM a gramática aparece contextualizada: o efeito de sentido importa mais que a nomenclatura.",
+      "position": 1
+    },
+    {
+      "key": 5,
+      "parent_key": 4,
+      "title": "Concordância verbal e nominal",
+      "notes_md": null,
+      "position": 0
+    },
+    {
+      "key": 6,
+      "parent_key": 4,
+      "title": "Regência e crase",
+      "notes_md": "Casos clássicos: 'assistir a', 'visar a', crase antes de palavra feminina determinada.",
+      "position": 1
+    },
+    {
+      "key": 7,
+      "parent_key": null,
+      "title": "Literatura",
+      "notes_md": null,
+      "position": 2
+    },
+    {
+      "key": 8,
+      "parent_key": 7,
+      "title": "Escolas literárias",
+      "notes_md": "Do Barroco ao Pré-Modernismo: contexto histórico, características e autores principais.",
+      "position": 0
+    },
+    {
+      "key": 9,
+      "parent_key": 7,
+      "title": "Modernismo brasileiro",
+      "notes_md": "Semana de 22, as três gerações e os autores mais cobrados: Mário, Oswald, Drummond, Clarice e Guimarães Rosa.",
+      "position": 1
+    },
+    {
+      "key": 10,
+      "parent_key": null,
+      "title": "Variação linguística",
+      "notes_md": "Norma-padrão vs. variedades regionais, sociais e situacionais. O ENEM valoriza a adequação, não o 'certo/errado'.",
+      "position": 3
+    },
+    {
+      "key": 11,
+      "parent_key": null,
+      "title": "Artes e cultura corporal",
+      "notes_md": "Vanguardas europeias, manifestações culturais brasileiras, dança e esporte como linguagem.",
+      "position": 4
+    }
+  ],
+  "cards": [
+    {
+      "topic_key": 2,
+      "kind": "basic",
+      "front_md": "Qual função da linguagem predomina quando o foco está no **destinatário**, com verbos no imperativo?",
+      "back_md": "A função **conativa** (ou apelativa), típica de propagandas e discursos persuasivos.",
+      "options_json": null
+    },
+    {
+      "topic_key": 2,
+      "kind": "quiz",
+      "front_md": "\"Alô? Está me ouvindo?\" — a frase testa o canal de comunicação. Qual é a função da linguagem?",
+      "back_md": "Função fática: verifica ou mantém o canal de comunicação aberto.",
+      "options_json": "{\"options\":[\"Fática\",\"Emotiva\",\"Referencial\",\"Poética\"],\"answer\":0}"
+    },
+    {
+      "topic_key": 3,
+      "kind": "basic",
+      "front_md": "Que figura de linguagem ocorre em \"li Machado de Assis nas férias\"?",
+      "back_md": "**Metonímia**: o autor pela obra.",
+      "options_json": null
+    },
+    {
+      "topic_key": 5,
+      "kind": "basic",
+      "front_md": "\"Fazem dez anos que estudo\" está correto?",
+      "back_md": "Não. O verbo **fazer** indicando tempo decorrido é impessoal: \"**Faz** dez anos que estudo\".",
+      "options_json": null
+    },
+    {
+      "topic_key": 9,
+      "kind": "basic",
+      "front_md": "Quais são os marcos da primeira geração modernista brasileira?",
+      "back_md": "A Semana de Arte Moderna de 1922, o \"Manifesto Antropófago\" de Oswald de Andrade e a ruptura com o academicismo parnasiano.",
+      "options_json": null
+    }
+  ],
+  "lessons": [
+    {
+      "key": 0,
+      "title": "Funções da linguagem na prática",
+      "presenter_notes_md": "Abrir com um anúncio real e perguntar à turma qual é a intenção do texto. Só depois nomear as funções — o conceito nasce do exemplo. Reservar 10 min para o quiz e a discussão do gabarito.",
+      "estimated_duration_min": 50,
+      "position": 0
+    }
+  ],
+  "lesson_items": [
+    {
+      "lesson_key": 0,
+      "topic_key": 2,
+      "kind": "topic",
+      "body_md": null,
+      "position": 0
+    },
+    {
+      "lesson_key": 0,
+      "topic_key": 2,
+      "kind": "note",
+      "body_md": "Cada função da linguagem corresponde a um elemento da comunicação em destaque:\n\n- **Referencial** → contexto (informar)\n- **Emotiva** → emissor (expressar)\n- **Conativa** → receptor (convencer)\n- **Fática** → canal (testar o contato)\n- **Metalinguística** → código (a língua falando dela mesma)\n- **Poética** → mensagem (a forma importa)",
+      "position": 1
+    },
+    {
+      "lesson_key": 0,
+      "topic_key": 2,
+      "kind": "note",
+      "body_md": "[Videoaula: as seis funções da linguagem em questões do ENEM](https://www.youtube.com/watch?v=dQw4w9WgXcQ)",
+      "position": 2
+    },
+    {
+      "lesson_key": 0,
+      "topic_key": 2,
+      "kind": "quiz",
+      "body_md": "{\"q\":\"Em um dicionário, o verbete que define a palavra 'língua' exemplifica qual função da linguagem?\",\"options\":[\"Referencial\",\"Metalinguística\",\"Poética\",\"Fática\"],\"answer\":1}",
+      "position": 3
+    },
+    {
+      "lesson_key": 0,
+      "topic_key": null,
+      "kind": "note",
+      "body_md": "Para casa: encontrar um anúncio, um poema e uma notícia e identificar a função predominante em cada um.",
+      "position": 4
+    }
+  ],
+  "content": [
+    {
+      "topic_key": 2,
+      "source": "youtube",
+      "external_id": "dQw4w9WgXcQ",
+      "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "title": "Videoaula: as seis funções da linguagem em questões do ENEM",
+      "kind": "video"
+    },
+    {
+      "topic_key": 9,
+      "source": "web",
+      "external_id": null,
+      "url": "https://pt.wikipedia.org/wiki/Semana_de_Arte_Moderna",
+      "title": "Semana de Arte Moderna — panorama histórico",
+      "kind": "article"
+    }
+  ]
+}

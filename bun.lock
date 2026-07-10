@@ -41,6 +41,7 @@
       "name": "worker",
       "version": "0.0.1",
       "dependencies": {
+        "@studyos/core": "workspace:*",
         "@studyos/db": "workspace:*",
         "@studyos/shared": "workspace:*",
         "hono": "^4.10.4",

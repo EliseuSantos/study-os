@@ -16,6 +16,8 @@ export * from './repo/targets';
 export * from './repo/reminders';
 export * from './repo/cycle';
 export * from './repo/content';
+export * from './repo/lessons';
+export * from './repo/snapshot';
 export * from './repo/stats-queries';
 export * from './search';
 export * from './sync/apply';

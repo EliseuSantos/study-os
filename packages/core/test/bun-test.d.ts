@@ -13,6 +13,8 @@ declare module 'bun:test' {
     toBeLessThan(expected: number): void;
     toBeLessThanOrEqual(expected: number): void;
     toBeNull(): void;
+    toMatch(expected: string | RegExp): void;
+    not: Expectation;
   }
   export function expect(actual: unknown): Expectation;
 }
