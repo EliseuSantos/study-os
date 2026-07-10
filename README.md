@@ -6,9 +6,8 @@
 Open-source, offline-first study platform (pt-BR) for exam candidates and their
 teachers. Paste a syllabus and it becomes a study track; a daily queue, an FSRS
 spaced-repetition scheduler, a focus timer and honest stats keep the studying going —
-all on your device, working fully offline. An optional Cloudflare Worker on **your
-own** free-tier account adds multi-device sync, web push reminders and track sharing.
-No accounts, no tracking, free forever.
+all on your device, working fully offline. The hosted platform adds optional
+multi-device sync, web push reminders and track sharing. No tracking, free forever.
 
 ## Features
 
@@ -80,26 +79,6 @@ cd apps/pwa && bun run build && bun x vite preview --port 4173 &
 cd apps/pwa && bun run test:e2e
 ```
 
-## Deploy your own
-
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/EliseuSantos/study-os)
-
-One Worker on Cloudflare's free tier serves the app, sync, push and sharing:
-
-```sh
-cd apps/worker
-bun x wrangler d1 create studyos            # paste database_id into wrangler.jsonc
-bun x wrangler r2 bucket create studyos-shares
-bun x wrangler d1 migrations apply studyos --remote
-bun x wrangler secret put SYNC_TOKEN        # any long random string
-bun run scripts/gen-vapid.ts                # then `wrangler secret put` the three values
-cd ../.. && bun x turbo build --filter=pwa
-cd apps/worker && bun run deploy            # serves the app + api from one Worker
-```
-
-Full walkthrough — secrets, cron, free-tier notes, troubleshooting:
-[docs/DEPLOY.md](docs/DEPLOY.md).
-
 ## License
 
 [AGPL-3.0](LICENSE)
@@ -114,7 +93,6 @@ timer de foco, rotinas, estatísticas e biblioteca de conteúdo gratuito — tud
 dispositivo, funcionando offline. Professores montam aulas, apresentam com modo
 apresentador e quiz ao vivo, e compartilham trilhas por link e QR code.
 
-Seus dados ficam no seu aparelho (SQLite sobre OPFS). A sincronização entre
-dispositivos, o push de lembretes e o compartilhamento são opcionais e rodam na **sua
-própria** conta gratuita da Cloudflare — sem contas, sem rastreamento, gratuito para
-sempre. Guia de deploy completo em [docs/DEPLOY.md](docs/DEPLOY.md).
+Seus dados ficam no seu aparelho (SQLite sobre OPFS) e o app funciona 100% offline.
+A plataforma online adiciona sincronização entre dispositivos, push de lembretes e
+compartilhamento — sem rastreamento, gratuito para sempre.
