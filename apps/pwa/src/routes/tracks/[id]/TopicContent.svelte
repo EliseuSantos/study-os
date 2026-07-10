@@ -36,6 +36,9 @@
     if (item.source === 'youtube' && item.external_id !== null) {
       return `/library/watch/${item.external_id}`;
     }
+    if (item.source === 'web' && item.url !== null) {
+      return `/library/read?url=${encodeURIComponent(item.url)}`;
+    }
     return item.url;
   }
 

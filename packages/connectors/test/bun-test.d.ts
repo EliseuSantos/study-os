@@ -13,6 +13,7 @@ declare module 'bun:test' {
     toBeLessThan(expected: number): void;
     toBeLessThanOrEqual(expected: number): void;
     toBeNull(): void;
+    toHaveLength(expected: number): void;
   }
   export function expect(actual: unknown): Expectation;
 }

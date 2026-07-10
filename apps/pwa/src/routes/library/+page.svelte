@@ -23,6 +23,7 @@
     { value: 'youtube', label: 'youtube' },
     { value: 'wikipedia', label: 'wikipédia' },
     { value: 'stackexchange', label: 'stack exchange' },
+    { value: 'web', label: 'web' },
   ];
 
   function keyOf(result: ContentResult): string {
@@ -47,9 +48,13 @@
   }
 
   const total = $derived(store.groups.reduce((n, g) => n + g.results.length, 0));
+  const webNoteVisible = $derived(store.webUnavailable || store.webOverBudget);
   const visibleGroups = $derived(
     store.groups.filter(
-      (g) => g.results.length > 0 || (g.source === 'youtube' && store.youtubeUnavailable),
+      (g) =>
+        g.results.length > 0 ||
+        (g.source === 'youtube' && store.youtubeUnavailable) ||
+        (g.source === 'web' && webNoteVisible),
     ),
   );
 </script>
@@ -106,7 +111,7 @@
       <p class="type-item mt-8 text-text-soft">busque um assunto — vídeo, artigo ou pergunta.</p>
     {:else if store.status === 'loading'}
       <p class="type-item mt-8 text-text-soft">buscando…</p>
-    {:else if total === 0 && !store.youtubeUnavailable}
+    {:else if total === 0 && !store.youtubeUnavailable && !webNoteVisible}
       <p class="type-item mt-8 text-text-soft">nada encontrado — tente outros termos.</p>
     {/if}
   </div>
@@ -119,12 +124,27 @@
           {#if group.source === 'youtube' && store.youtubeUnavailable}
             <p class="type-item mt-2 text-text-soft">busca do youtube não configurada.</p>
           {/if}
+          {#if group.source === 'web' && store.webUnavailable}
+            <p class="type-item mt-2 text-text-soft">busca na web não configurada.</p>
+          {/if}
+          {#if group.source === 'web' && store.webOverBudget}
+            <p data-testid="web-over-budget" class="type-item mt-2 text-text-soft">
+              limite mensal de busca atingido — renova no próximo mês.
+            </p>
+          {/if}
           <ul role="list" class="mt-2">
             {#each group.results as result (keyOf(result))}
               <li data-testid="library-result" class="border-b border-hairline py-3 first:border-t">
                 {#if result.source === 'youtube'}
                   <a
                     href={`/library/watch/${result.external_id}`}
+                    class="type-item block text-text-body transition-colors duration-(--dur-base) ease-brand hover:text-text-hi"
+                  >
+                    {result.title}
+                  </a>
+                {:else if result.source === 'web'}
+                  <a
+                    href={`/library/read?url=${encodeURIComponent(result.url)}`}
                     class="type-item block text-text-body transition-colors duration-(--dur-base) ease-brand hover:text-text-hi"
                   >
                     {result.title}

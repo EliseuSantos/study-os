@@ -94,6 +94,23 @@ bun x wrangler secret put YOUTUBE_API_KEY
 Without it the Worker answers `503 { "error": "youtube api not configured" }` and the
 PWA hides the YouTube source. Wikipedia and Stack Exchange work with no key.
 
+### FIRECRAWL_API_KEY (optional)
+
+Enables web search and the in-app article reader (library source `web`). Create a free
+account at firecrawl.dev — the free plan gives **1,000 credits/month** (search = 2
+credits per 10 results, article scrape = 1 credit) — and set:
+
+```sh
+bun x wrangler secret put FIRECRAWL_API_KEY
+```
+
+The Worker stays inside the free plan by itself: results are cached (6h search / 7 days
+per article, cache hits cost nothing) and a monthly counter in D1 (`proxy_usage`) fails
+closed with `429 { "error": "firecrawl monthly limit reached" }` — the PWA shows a calm
+note until the month turns. On a paid plan, raise the ceiling with a plain-text var
+`FIRECRAWL_MONTHLY_CREDITS` in `wrangler.jsonc` (or `.dev.vars` locally). Without the
+key the Worker answers 503 and the PWA hides the web source.
+
 ## 5. Build and deploy
 
 The Worker uploads the PWA build as its static assets, so build the app first (from the

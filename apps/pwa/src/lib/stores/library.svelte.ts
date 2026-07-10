@@ -11,7 +11,7 @@ import { SETTINGS_KEYS, type TopicRow, type TrackRow } from '@studyos/shared';
 import { getDb } from '$lib/db/client';
 import { liveQuery } from '$lib/db/live.svelte';
 
-export const SOURCES = ['wikipedia', 'stackexchange', 'youtube'] as const;
+export const SOURCES = ['wikipedia', 'stackexchange', 'youtube', 'web'] as const;
 export type Source = (typeof SOURCES)[number];
 export type SourceFilter = 'all' | Source;
 
@@ -19,6 +19,7 @@ export const SOURCE_LABELS: Record<Source, string> = {
   wikipedia: 'wikipédia',
   stackexchange: 'stack exchange',
   youtube: 'youtube',
+  web: 'web',
 };
 
 export const KIND_LABELS: Record<string, string> = {
@@ -74,6 +75,8 @@ export interface LibraryStore {
   get status(): 'idle' | 'loading' | 'done';
   get groups(): SourceGroup[];
   get youtubeUnavailable(): boolean;
+  get webUnavailable(): boolean;
+  get webOverBudget(): boolean;
   get filter(): SourceFilter;
   get tracks(): TrackRow[];
   setFilter(next: SourceFilter): void;
@@ -87,6 +90,8 @@ export function createLibraryStore(): LibraryStore {
   let status = $state<'idle' | 'loading' | 'done'>('idle');
   let groups = $state<SourceGroup[]>([]);
   let youtubeUnavailable = $state(false);
+  let webUnavailable = $state(false);
+  let webOverBudget = $state(false);
   let filter = $state<SourceFilter>('all');
   // Guards against a slow earlier search overwriting a newer one.
   let searchSeq = 0;
@@ -109,12 +114,22 @@ export function createLibraryStore(): LibraryStore {
       youtubeStatus = res.status;
       return res;
     };
+    // Same trick for the web source: 503 = not configured, 429 = monthly
+    // firecrawl budget exhausted (free plan) — each gets its own calm note.
+    let webStatus: number | null = null;
+    const webFetch: FetchLike = async (url, init) => {
+      const res = await authedFetch(url, init);
+      webStatus = res.status;
+      return res;
+    };
 
     const settled = await Promise.allSettled(
       enabled.map((source) => {
         const connector = getConnector(source);
         if (connector === null) return Promise.resolve<ContentResult[]>([]);
-        return connector.search(query, source === 'youtube' ? youtubeFetch : plainFetch);
+        const fetchFn =
+          source === 'youtube' ? youtubeFetch : source === 'web' ? webFetch : plainFetch;
+        return connector.search(query, fetchFn);
       }),
     );
     if (seq !== searchSeq) return;
@@ -124,6 +139,8 @@ export function createLibraryStore(): LibraryStore {
       return { source, results: outcome?.status === 'fulfilled' ? outcome.value : [] };
     });
     youtubeUnavailable = youtubeStatus === 503;
+    webUnavailable = webStatus === 503;
+    webOverBudget = webStatus === 429;
     status = 'done';
   }
 
@@ -136,6 +153,12 @@ export function createLibraryStore(): LibraryStore {
     },
     get youtubeUnavailable() {
       return youtubeUnavailable;
+    },
+    get webUnavailable() {
+      return webUnavailable;
+    },
+    get webOverBudget() {
+      return webOverBudget;
     },
     get filter() {
       return filter;

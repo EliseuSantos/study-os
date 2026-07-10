@@ -54,6 +54,9 @@ async function resolveHref(hit: SearchHit): Promise<string | null> {
   if (content.source === 'youtube' && content.external_id !== null) {
     return `/library/watch/${content.external_id}`;
   }
+  if (content.source === 'web' && content.url !== null) {
+    return `/library/read?url=${encodeURIComponent(content.url)}`;
+  }
   return content.url;
 }
 

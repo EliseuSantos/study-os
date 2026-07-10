@@ -22,8 +22,9 @@ No accounts, no tracking, free forever.
 - Weekly routines and a planner that redistributes what slipped — never punishes
 - Stats: study heatmap, streak, accuracy per track, weak points, shareable progress
   image
-- Library: search YouTube, Wikipedia and Stack Exchange, attach content to topics,
-  watch videos with a synced transcript
+- Library: search YouTube, Wikipedia, Stack Exchange and the web (Firecrawl,
+  optional — free tier respected), attach content to topics, watch videos with a
+  synced transcript, read articles in a clean in-app reader
 - Reminders with local notifications, web push and `.ics` export
 - Installable PWA with a full offline shell
 
