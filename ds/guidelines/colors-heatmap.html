@@ -1,0 +1,23 @@
+<!-- @dsCard group="Colors" viewport="700x130" name="Heatmap scale" subtitle="Constância — amber alpha ramp on dark" -->
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css">
+<style>body{margin:0;background:var(--bg);height:130px;display:flex;align-items:center;justify-content:center;gap:28px;font-family:var(--font-display)}
+.cells{display:flex;gap:4px}.col{display:flex;flex-direction:column;gap:4px}
+.c{width:16px;height:16px;border-radius:4px}
+.leg{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text-low)}
+.l{width:12px;height:12px;border-radius:3px}</style></head>
+<body>
+<div class="cells">
+<div class="col"><div class="c" style="background:var(--heat-1)"></div><div class="c" style="background:var(--heat-2)"></div><div class="c" style="background:var(--heat-0)"></div><div class="c" style="background:var(--heat-2)"></div></div>
+<div class="col"><div class="c" style="background:var(--heat-2)"></div><div class="c" style="background:var(--heat-1)"></div><div class="c" style="background:var(--heat-3)"></div><div class="c" style="background:var(--heat-1)"></div></div>
+<div class="col"><div class="c" style="background:var(--heat-0)"></div><div class="c" style="background:var(--heat-3)"></div><div class="c" style="background:var(--heat-4)"></div><div class="c" style="background:var(--heat-2)"></div></div>
+<div class="col"><div class="c" style="background:var(--heat-2)"></div><div class="c" style="background:var(--heat-4)"></div><div class="c" style="background:var(--heat-3)"></div><div class="c" style="background:var(--heat-1)"></div></div>
+</div>
+<div class="leg">menos
+<span class="l" style="background:var(--heat-0)"></span>
+<span class="l" style="background:var(--heat-1)"></span>
+<span class="l" style="background:var(--heat-2)"></span>
+<span class="l" style="background:var(--heat-3)"></span>
+<span class="l" style="background:var(--heat-4)"></span>
+mais</div>
+</body></html>

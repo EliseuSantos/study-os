@@ -1,0 +1,11 @@
+node_modules
+.turbo
+.svelte-kit
+.wrangler
+dist
+build
+bun.lock
+ds/
+apps/worker/worker-configuration.d.ts
+apps/pwa/cypress/screenshots
+apps/pwa/cypress/videos

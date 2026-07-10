@@ -1,0 +1,89 @@
+import { newId, now, type GoalRow } from '@studyos/shared';
+import type { DbDriver, Row } from '../driver';
+import { localWrite } from './oplog';
+
+export interface CreateGoalInput {
+  title: string;
+  description?: string | null;
+  target_date?: number | null;
+}
+
+export interface GoalPatch {
+  title?: string;
+  description?: string | null;
+  target_date?: number | null;
+  status?: string;
+}
+
+function rowToGoal(r: Row): GoalRow {
+  return {
+    id: r['id'] as string,
+    title: r['title'] as string,
+    description: (r['description'] ?? null) as string | null,
+    target_date: (r['target_date'] ?? null) as number | null,
+    status: r['status'] as string,
+    created_at: r['created_at'] as number,
+    updated_at: r['updated_at'] as number,
+    deleted_at: (r['deleted_at'] ?? null) as number | null,
+  };
+}
+
+// max(now, prev + 1) keeps updated_at strictly increasing so same-millisecond
+// edits still pass the strict-> LWW guard.
+function bumpedTs(prev: number): number {
+  return Math.max(now(), prev + 1);
+}
+
+export async function createGoal(
+  db: DbDriver,
+  deviceId: string,
+  input: CreateGoalInput,
+): Promise<GoalRow> {
+  const ts = now();
+  const goal = {
+    id: newId(),
+    title: input.title,
+    description: input.description ?? null,
+    target_date: input.target_date ?? null,
+    status: 'active',
+    created_at: ts,
+    updated_at: ts,
+    deleted_at: null,
+  } satisfies GoalRow;
+  await localWrite(db, 'goals', goal, deviceId);
+  return goal;
+}
+
+export async function getGoal(db: DbDriver, id: string): Promise<GoalRow | null> {
+  const rows = await db.exec('SELECT * FROM goals WHERE id = ?', [id]);
+  const r = rows[0];
+  return r ? rowToGoal(r) : null;
+}
+
+export async function listGoals(db: DbDriver): Promise<GoalRow[]> {
+  const rows = await db.exec(
+    'SELECT * FROM goals WHERE deleted_at IS NULL ORDER BY created_at DESC, id DESC',
+  );
+  return rows.map(rowToGoal);
+}
+
+export async function updateGoal(
+  db: DbDriver,
+  deviceId: string,
+  id: string,
+  patch: GoalPatch,
+): Promise<GoalRow | null> {
+  const existing = await getGoal(db, id);
+  if (!existing || existing.deleted_at !== null) return null;
+  const updated = { ...existing, ...patch, updated_at: bumpedTs(existing.updated_at) };
+  await localWrite(db, 'goals', updated, deviceId);
+  return updated;
+}
+
+/** Soft delete: on the wire this is an upsert with deleted_at set (docs/SYNC.md). */
+export async function deleteGoal(db: DbDriver, deviceId: string, id: string): Promise<void> {
+  const existing = await getGoal(db, id);
+  if (!existing || existing.deleted_at !== null) return;
+  const ts = bumpedTs(existing.updated_at);
+  await localWrite(db, 'goals', { ...existing, deleted_at: ts, updated_at: ts }, deviceId);
+}

@@ -1,0 +1,96 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  TURBO_TELEMETRY_DISABLED: 1
+  DO_NOT_TRACK: 1
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Cache turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Format check
+        run: bun run format:check
+
+      - name: Typecheck, lint, test, build
+        run: bun x turbo typecheck lint test build --cache-dir=.turbo
+
+  e2e:
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - name: Setup Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Cache turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build pwa
+        run: bun x turbo build --filter=pwa --cache-dir=.turbo
+
+      - name: Start preview server
+        working-directory: apps/pwa
+        run: |
+          bun x vite preview --port 4173 &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:4173 > /dev/null; then
+              echo "preview server is up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "preview server did not start in time" >&2
+          exit 1
+
+      - name: Run cypress
+        working-directory: apps/pwa
+        run: bun x cypress run --browser chrome
+
+      - name: Upload cypress artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-artifacts
+          path: |
+            apps/pwa/cypress/screenshots
+            apps/pwa/cypress/videos
+          if-no-files-found: ignore

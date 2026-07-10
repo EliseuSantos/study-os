@@ -1,0 +1,43 @@
+/* StudyOS typography tokens — Space Grotesk (display/UI) + Literata (body serif) */
+
+:root {
+  --font-display: 'Space Grotesk', sans-serif;   /* headings, UI chrome, numbers, buttons */
+  --font-body: 'Literata', Georgia, serif;        /* content: topic names, cards, prose */
+
+  /* Display scale */
+  --type-hero: 600 76px/.98 var(--font-display);        /* doc hero, ls -.03em */
+  --type-timer-xl: 500 72px/1 var(--font-display);      /* desktop focus timer, ls -.015em, tabular */
+  --type-timer: 500 58px/1 var(--font-display);         /* mobile focus timer, ls -.01em, tabular */
+  --type-stat: 500 52px/1 var(--font-display);          /* big stat numbers, ls -.015em, tabular */
+  --type-h1: 600 32px/1.1 var(--font-display);          /* desktop screen title, ls -.02em */
+  --type-h1-mobile: 600 28px/1.1 var(--font-display);   /* mobile screen title, ls -.02em */
+  --type-h2: 600 24px/1.1 var(--font-display);          /* section screen titles, ls -.02em */
+  --type-h3: 600 22px/1.15 var(--font-display);         /* pane titles, ls -.01em */
+
+  /* Body (Literata) */
+  --type-card-title: 400 19px/1.35 var(--font-body);    /* queue "next" card title */
+  --type-flashcard: 400 22px/1.4 var(--font-body);      /* flashcard front */
+  --type-item: 400 16px/1.4 var(--font-body);           /* list item title */
+  --type-item-sm: 400 15px/1.4 var(--font-body);        /* dense list item */
+  --type-reading: 400 15.5px/1.65 var(--font-body);     /* notes prose */
+  --type-caption-serif: italic 400 14.5px/1.5 var(--font-body); /* figure captions */
+
+  /* UI (Space Grotesk) */
+  --type-button: 600 16px/1 var(--font-display);
+  --type-button-sm: 600 13px/1 var(--font-display);
+  --type-meta: 400 12px/1.35 var(--font-display);       /* metadata rows */
+  --type-meta-sm: 400 11px/1.35 var(--font-display);
+
+  /* Uppercase labels — always letter-spaced */
+  --type-eyebrow: 400 12px/1.2 var(--font-display);     /* ls .18em, uppercase */
+  --type-label: 400 11px/1.2 var(--font-display);       /* ls .14em, uppercase */
+  --type-label-sm: 400 10px/1.2 var(--font-display);    /* ls .16em, uppercase */
+
+  /* Letter-spacing scale */
+  --ls-tight-3: -.03em;   /* hero */
+  --ls-tight-2: -.02em;   /* titles */
+  --ls-tight-1: -.01em;   /* subtitles, timers */
+  --ls-wide-1: .1em;
+  --ls-wide-2: .14em;     /* labels */
+  --ls-wide-3: .18em;     /* eyebrows */
+}

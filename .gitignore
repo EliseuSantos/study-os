@@ -1,0 +1,13 @@
+node_modules/
+.turbo/
+dist/
+build/
+.svelte-kit/
+.wrangler/
+.env*
+!.env.example
+.dev.vars
+.DS_Store
+coverage/
+apps/pwa/cypress/screenshots/
+apps/pwa/cypress/videos/
