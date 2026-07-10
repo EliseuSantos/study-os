@@ -64,6 +64,7 @@
 </script>
 
 <div class="flex min-h-dvh flex-col">
+  <a href="#conteudo" class="skip-link">pular para o conteúdo</a>
   <header class="border-b border-hairline">
     <div class="mx-auto flex w-full max-w-2xl items-center gap-3 px-4 py-3">
       <span class="brand-mark" aria-hidden="true"></span>
@@ -113,12 +114,30 @@
     </div>
   </header>
 
-  <main class="flex-1">
+  <main id="conteudo" class="flex-1">
     {@render children()}
   </main>
 </div>
 
 <style>
+  /* Visually hidden until keyboard focus lands on it. */
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 12px;
+    z-index: 100;
+    font: var(--type-meta);
+    color: var(--text-hi);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+  }
+
+  .skip-link:focus-visible {
+    left: 12px;
+  }
+
   .brand-mark {
     width: 12px;
     height: 12px;

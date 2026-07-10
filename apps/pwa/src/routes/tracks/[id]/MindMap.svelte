@@ -149,7 +149,10 @@
     outline: none;
   }
 
+  /* Thicker than the selected stroke (1.5) so keyboard focus stays visible
+     even on the already-selected node. */
   .map-node:focus-visible rect {
     stroke: var(--accent);
+    stroke-width: 2.5;
   }
 </style>

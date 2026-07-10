@@ -39,8 +39,8 @@
     if (picked === undefined) {
       return 'cursor-pointer border-border text-text-body hover:border-text-low hover:text-text-hi';
     }
-    if (quiz !== null && i === quiz.answer) return 'border-success bg-success text-bg-deep';
-    if (i === picked) return 'border-border text-text-low';
+    if (quiz !== null && i === quiz.answer) return 'border-success text-text-hi';
+    if (i === picked) return 'border-border text-text-mid';
     return 'border-hairline text-text-soft opacity-60';
   }
 </script>
@@ -84,6 +84,10 @@
             {String.fromCharCode(97 + i)} ·
           </span>
           <span class="font-body text-[1.2em] leading-[1.4]">{option}</span>
+          {#if picked !== undefined && quiz !== null && i === quiz.answer}
+            <span class="ml-auto font-display text-[1em] text-success" aria-hidden="true">✓</span>
+            <span class="sr-only">resposta correta</span>
+          {/if}
         </button>
       {/each}
     </div>

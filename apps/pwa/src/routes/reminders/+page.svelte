@@ -176,8 +176,9 @@
     <button
       data-testid="notifications-enable"
       type="button"
+      disabled={permission !== 'default'}
       onclick={() => void enableNotifications()}
-      class="type-meta h-(--h-button-sm) cursor-pointer rounded-base border border-border px-4 text-text-mid transition-colors duration-(--dur-base) ease-brand hover:text-text-hi"
+      class="type-meta h-(--h-button-sm) cursor-pointer rounded-base border border-border px-4 text-text-mid transition-colors duration-(--dur-base) ease-brand hover:text-text-hi disabled:cursor-default disabled:opacity-60 disabled:hover:text-text-mid"
     >
       {notifLabel}
     </button>
@@ -197,9 +198,9 @@
     >
       exportar .ics
     </button>
-    {#if pushLabel !== ''}
-      <span class="type-meta text-text-low" aria-live="polite">{pushLabel}</span>
-    {/if}
+    <!-- Always in the DOM: a live region mounted together with its first
+         content is not announced by screen readers. -->
+    <span class="type-meta text-text-low" aria-live="polite">{pushLabel}</span>
   </div>
 
   {#if isIos && !isStandalone}
