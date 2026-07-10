@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { bearerAuth } from './auth';
 import { handleCron } from './cron';
 import type { Env } from './env';
+import { handleRss, handleYoutubeSearch, handleYoutubeTranscript } from './proxy';
 import { handleSubscribe, handleVapidKey } from './push';
 import { handlePull, handlePush } from './sync';
 
@@ -14,6 +15,10 @@ export function createApp(): Hono<{ Bindings: Env }> {
   app.use('/push/*', bearerAuth);
   app.post('/push/subscribe', handleSubscribe);
   app.get('/push/vapid', handleVapidKey);
+  app.use('/proxy/*', bearerAuth);
+  app.get('/proxy/youtube/search', handleYoutubeSearch);
+  app.get('/proxy/youtube/transcript', handleYoutubeTranscript);
+  app.get('/proxy/rss', handleRss);
   return app;
 }
 

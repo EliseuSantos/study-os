@@ -15,6 +15,8 @@ export * from './repo/routines';
 export * from './repo/targets';
 export * from './repo/reminders';
 export * from './repo/cycle';
+export * from './repo/content';
 export * from './repo/stats-queries';
+export * from './search';
 export * from './sync/apply';
 export * from './sync/engine';

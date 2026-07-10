@@ -14,6 +14,34 @@ See `docs/SYNC.md` for the frozen wire contract.
 - `POST /push/subscribe` - same auth, body `{ device_id, endpoint, p256dh, auth }`,
   upserts into `push_subscriptions` keyed by `device_id`
 - `GET /push/vapid` - same auth, returns `{ publicKey }` for `pushManager.subscribe`
+- `GET /proxy/youtube/search?q=<query>` - same auth, see "Content proxy"
+- `GET /proxy/youtube/transcript?id=<videoId>` - same auth, see "Content proxy"
+- `GET /proxy/rss?url=<https url>` - same auth, see "Content proxy"
+
+## Content proxy
+
+Three bearer-auth'd `GET` endpoints back the M4 content features (`docs/M4-CONTRACTS.md`),
+all served from `src/proxy.ts` and cached with the workerd Cache API (`caches.default`,
+behind the `src/cache.ts` seam so bun tests can inject a fake):
+
+- `/proxy/youtube/search?q=` - calls the YouTube Data API v3
+  (`search?part=snippet&type=video&maxResults=10`) with the `YOUTUBE_API_KEY` secret and
+  maps the result to the frozen wire format
+  `{ items: { id, title, channel, thumbnail, duration }[] }`. `duration` is always `null`
+  in M4: the search endpoint does not return it and fetching it would cost an extra
+  `videos.list` call. Missing secret answers `503 { "error": "youtube api not configured" }`
+  so the PWA can hide the source. Cached 6h, keyed by the trimmed lowercase query.
+- `/proxy/youtube/transcript?id=` - fetches `https://www.youtube.com/api/timedtext?v=<id>`
+  with `lang=pt` then falls back to `lang=en` (YouTube answers 200 with an empty body when
+  a track is missing); returns the raw timedtext XML as `text/xml` for the client-side
+  `parseTimedText`, or 404 when neither language exists. Cached 24h.
+- `/proxy/rss?url=` - fetches the given feed (https only; localhost, private ranges and
+  `*.internal` hosts are rejected with 400) with a 5s timeout and passes the body through
+  with its original content-type. Upstream failures answer 502. Cached 1h.
+
+`YOUTUBE_API_KEY` is optional: set it in `.dev.vars` locally and with
+`bun x wrangler secret put YOUTUBE_API_KEY` in production (an API key restricted to the
+YouTube Data API v3 is enough — no OAuth).
 
 ## Web push
 

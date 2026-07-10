@@ -26,4 +26,6 @@ export interface Env {
   VAPID_PRIVATE_KEY: string;
   /** mailto: or https: contact, RFC 8292 `sub` claim. */
   VAPID_SUBJECT: string;
+  /** YouTube Data API v3 key; optional — /proxy/youtube/search answers 503 without it. */
+  YOUTUBE_API_KEY?: string;
 }

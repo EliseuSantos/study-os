@@ -3,3 +3,5 @@ SYNC_TOKEN=dev-token
 VAPID_PUBLIC_KEY=
 VAPID_PRIVATE_KEY=
 VAPID_SUBJECT=mailto:dev@example.com
+# Optional: YouTube Data API v3 key — without it /proxy/youtube/search answers 503
+YOUTUBE_API_KEY=
