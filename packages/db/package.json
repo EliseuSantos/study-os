@@ -1,0 +1,24 @@
+{
+  "name": "@studyos/db",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./adapters/bun-sqlite": "./src/adapters/bun-sqlite.ts",
+    "./adapters/d1": "./src/adapters/d1.ts",
+    "./sync/server-core": "./src/sync/server-core.ts",
+    "./migrations/*": "./migrations/*"
+  },
+  "scripts": {
+    "lint": "oxlint .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@studyos/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.0"
+  }
+}

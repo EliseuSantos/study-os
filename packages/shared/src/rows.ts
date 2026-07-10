@@ -1,0 +1,200 @@
+export interface GoalRow {
+  id: string;
+  title: string;
+  description: string | null;
+  target_date: number | null;
+  status: string;
+  created_at: number;
+  updated_at: number;
+  deleted_at: number | null;
+}
+
+export interface TrackRow {
+  id: string;
+  goal_id: string | null;
+  title: string;
+  description: string | null;
+  mode: string;
+  origin: string | null;
+  origin_version: string | null;
+  created_at: number;
+  updated_at: number;
+  deleted_at: number | null;
+}
+
+export interface TopicRow {
+  id: string;
+  track_id: string;
+  parent_id: string | null;
+  title: string;
+  notes_md: string | null;
+  position: number;
+  status: string;
+  updated_at: number;
+  deleted_at: number | null;
+}
+
+export interface TopicDepRow {
+  topic_id: string;
+  depends_on_id: string;
+}
+
+export interface CycleSlotRow {
+  id: string;
+  track_id: string;
+  topic_id: string;
+  weight: number;
+  position: number;
+  updated_at: number;
+  deleted_at: number | null;
+}
+
+export interface LessonRow {
+  id: string;
+  track_id: string;
+  title: string;
+  presenter_notes_md: string | null;
+  estimated_duration_min: number | null;
+  position: number;
+  updated_at: number;
+  deleted_at: number | null;
+}
+
+export interface LessonItemRow {
+  id: string;
+  lesson_id: string;
+  topic_id: string | null;
+  content_item_id: string | null;
+  kind: string;
+  body_md: string | null;
+  position: number;
+  updated_at: number;
+  deleted_at: number | null;
+}
+
+export interface ContentItemRow {
+  id: string;
+  topic_id: string | null;
+  source: string;
+  external_id: string | null;
+  url: string | null;
+  title: string;
+  kind: string;
+  meta_json: string | null;
+  added_at: number;
+  updated_at: number;
+  deleted_at: number | null;
+}
+
+export interface CardRow {
+  id: string;
+  topic_id: string;
+  kind: string;
+  front_md: string;
+  back_md: string | null;
+  options_json: string | null;
+  created_at: number;
+  updated_at: number;
+  deleted_at: number | null;
+}
+
+export interface FsrsStateRow {
+  id: string;
+  ref_kind: string;
+  ref_id: string;
+  state: string;
+  stability: number;
+  difficulty: number;
+  due_at: number | null;
+  last_review: number | null;
+  reps: number;
+  lapses: number;
+  updated_at: number;
+}
+
+export interface ReviewLogRow {
+  id: string;
+  fsrs_id: string;
+  rating: number;
+  reviewed_at: number;
+  elapsed_ms: number | null;
+}
+
+export interface RoutineRow {
+  id: string;
+  title: string;
+  track_id: string | null;
+  rrule: string;
+  start_time: string;
+  duration_min: number;
+  active: number;
+  updated_at: number;
+  deleted_at: number | null;
+}
+
+export interface SessionRow {
+  id: string;
+  track_id: string | null;
+  topic_id: string | null;
+  type: string;
+  started_at: number;
+  ended_at: number | null;
+  net_seconds: number;
+  focused: number;
+  pages_read: number | null;
+  videos_watched: number | null;
+  questions_total: number | null;
+  questions_correct: number | null;
+  notes: string | null;
+  updated_at: number;
+  deleted_at: number | null;
+}
+
+export interface ChecklistItemRow {
+  id: string;
+  ref_kind: string;
+  ref_id: string;
+  title: string;
+  done: number;
+  position: number;
+  updated_at: number;
+  deleted_at: number | null;
+}
+
+export interface TargetRow {
+  id: string;
+  track_id: string | null;
+  metric: string;
+  period: string;
+  value: number;
+  updated_at: number;
+  deleted_at: number | null;
+}
+
+export interface ReminderRow {
+  id: string;
+  title: string;
+  ref_kind: string | null;
+  ref_id: string | null;
+  notify_at: number;
+  rrule: string | null;
+  updated_at: number;
+  deleted_at: number | null;
+}
+
+export interface SettingRow {
+  key: string;
+  value: string;
+  updated_at: number;
+}
+
+export interface OplogRow {
+  seq: number;
+  tbl: string;
+  row_id: string;
+  op: string;
+  payload: string;
+  updated_at: number;
+  device_id: string;
+  synced: number;
+}

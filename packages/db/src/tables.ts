@@ -1,0 +1,159 @@
+export const SYNCED_TABLES = {
+  goals: {
+    columns: [
+      'id',
+      'title',
+      'description',
+      'target_date',
+      'status',
+      'created_at',
+      'updated_at',
+      'deleted_at',
+    ],
+  },
+  tracks: {
+    columns: [
+      'id',
+      'goal_id',
+      'title',
+      'description',
+      'mode',
+      'origin',
+      'origin_version',
+      'created_at',
+      'updated_at',
+      'deleted_at',
+    ],
+  },
+  topics: {
+    columns: [
+      'id',
+      'track_id',
+      'parent_id',
+      'title',
+      'notes_md',
+      'position',
+      'status',
+      'updated_at',
+      'deleted_at',
+    ],
+  },
+  cycle_slots: {
+    columns: ['id', 'track_id', 'topic_id', 'weight', 'position', 'updated_at', 'deleted_at'],
+  },
+  lessons: {
+    columns: [
+      'id',
+      'track_id',
+      'title',
+      'presenter_notes_md',
+      'estimated_duration_min',
+      'position',
+      'updated_at',
+      'deleted_at',
+    ],
+  },
+  lesson_items: {
+    columns: [
+      'id',
+      'lesson_id',
+      'topic_id',
+      'content_item_id',
+      'kind',
+      'body_md',
+      'position',
+      'updated_at',
+      'deleted_at',
+    ],
+  },
+  content_items: {
+    columns: [
+      'id',
+      'topic_id',
+      'source',
+      'external_id',
+      'url',
+      'title',
+      'kind',
+      'meta_json',
+      'added_at',
+      'updated_at',
+      'deleted_at',
+    ],
+  },
+  cards: {
+    columns: [
+      'id',
+      'topic_id',
+      'kind',
+      'front_md',
+      'back_md',
+      'options_json',
+      'created_at',
+      'updated_at',
+      'deleted_at',
+    ],
+  },
+  fsrs_state: {
+    columns: [
+      'id',
+      'ref_kind',
+      'ref_id',
+      'state',
+      'stability',
+      'difficulty',
+      'due_at',
+      'last_review',
+      'reps',
+      'lapses',
+      'updated_at',
+    ],
+  },
+  routines: {
+    columns: [
+      'id',
+      'title',
+      'track_id',
+      'rrule',
+      'start_time',
+      'duration_min',
+      'active',
+      'updated_at',
+      'deleted_at',
+    ],
+  },
+  sessions: {
+    columns: [
+      'id',
+      'track_id',
+      'topic_id',
+      'type',
+      'started_at',
+      'ended_at',
+      'net_seconds',
+      'focused',
+      'pages_read',
+      'videos_watched',
+      'questions_total',
+      'questions_correct',
+      'notes',
+      'updated_at',
+      'deleted_at',
+    ],
+  },
+  checklist_items: {
+    columns: ['id', 'ref_kind', 'ref_id', 'title', 'done', 'position', 'updated_at', 'deleted_at'],
+  },
+  targets: {
+    columns: ['id', 'track_id', 'metric', 'period', 'value', 'updated_at', 'deleted_at'],
+  },
+  reminders: {
+    columns: ['id', 'title', 'ref_kind', 'ref_id', 'notify_at', 'rrule', 'updated_at', 'deleted_at'],
+  },
+} as const satisfies Record<string, { columns: readonly string[] }>;
+
+export type SyncedTable = keyof typeof SYNCED_TABLES;
+
+export function isSyncedTable(tbl: string): tbl is SyncedTable {
+  return Object.hasOwn(SYNCED_TABLES, tbl);
+}
