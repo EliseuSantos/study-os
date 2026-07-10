@@ -1,10 +1,16 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
+  import { DAY_MS, netSecondsPerDay } from '@studyos/core';
+  import { sessionSlices } from '@studyos/db';
+  import { getDb } from '$lib/db/client';
   import { createStatsStore } from '$lib/stores/stats.svelte';
+  import { downloadProgressImage, type HeatLevel } from '$lib/stats/progress-image';
 
   const store = createStatsStore();
 
   const streak = $derived(store.data.streak);
+
+  let generating = $state(false);
 
   onDestroy(() => {
     store.destroy();
@@ -12,6 +18,36 @@
 
   function heatBackground(level: number): string {
     return level === 0 ? 'transparent' : `var(--heat-${level})`;
+  }
+
+  function heatLevel(level: number): HeatLevel {
+    return level <= 0 ? 0 : level === 1 ? 1 : level === 2 ? 2 : level === 3 ? 3 : 4;
+  }
+
+  // The live store keeps only bucketed levels, so re-derive the net total
+  // over the same 12-week grid for the image caption.
+  async function shareProgress(): Promise<void> {
+    if (generating) return;
+    generating = true;
+    try {
+      const db = await getDb();
+      const now = Date.now();
+      const sessions = await sessionSlices(db, now - 84 * DAY_MS);
+      const todayMidnight = new Date(now).setHours(0, 0, 0, 0);
+      const weekStart = todayMidnight - new Date(todayMidnight).getDay() * DAY_MS;
+      const gridStart = weekStart - 11 * 7 * DAY_MS;
+      const perDay = netSecondsPerDay(sessions, gridStart, gridStart + 83 * DAY_MS);
+      const totalSeconds = perDay.reduce((sum, d) => sum + d.seconds, 0);
+      await downloadProgressImage({
+        streak: store.data.streak,
+        totalHours: Math.round(totalSeconds / 3600),
+        heat: store.data.heatmap.map((cell) => ({
+          level: cell.future ? 0 : heatLevel(cell.level),
+        })),
+      });
+    } finally {
+      generating = false;
+    }
   }
 </script>
 
@@ -39,6 +75,16 @@
       ></div>
     {/each}
   </div>
+
+  <button
+    data-testid="share-progress"
+    type="button"
+    disabled={generating}
+    onclick={() => void shareProgress()}
+    class="type-meta mt-4 cursor-pointer rounded-chip border border-border px-3 py-1.5 text-text-mid transition-colors duration-(--dur-base) ease-brand hover:text-text-hi disabled:cursor-default disabled:opacity-60"
+  >
+    gerar imagem de progresso
+  </button>
 
   <h2 class="type-label mt-10 text-text-low">constância</h2>
   <p data-testid="stats-streak" class="type-h1 mt-2 text-text-hi">

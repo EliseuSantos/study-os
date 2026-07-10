@@ -1,50 +1,8 @@
 # M6 contracts (final milestone — polish & launch)
 
-Full PWA (offline shell, install prompt), TTS, mind-map, progress share image, Anki
-import, light-theme a11y pass, deploy docs. Streams A/B/C run parallel; stream D (a11y +
-docs) runs after they land.
-
-## Stream A — Anki import vertical
-
-- `packages/core/src/anki/index.ts`:
-  ```ts
-  export interface AnkiNote {
-    fields: string[];
-    modelName: string;
-    isCloze: boolean;
-  }
-  export interface AnkiCard {
-    kind: 'basic' | 'cloze';
-    front_md: string;
-    back_md: string | null;
-  }
-  export function splitFields(flds: string): string[]; // \x1f separator
-  export function notesToCards(notes: AnkiNote[]): AnkiCard[];
-  // basic: field[0] front, field[1] back (missing -> null); cloze: front keeps {{cN::...}}
-  // markup as-is (our review UI renders it plainly in M6), back = extra field or null;
-  // skip notes with empty first field; strip basic HTML tags (<br> -> \n, remove rest).
-  ```
-- `packages/db/src/repo/anki.ts`:
-  ```ts
-  importAnkiCards(db, deviceId, topicId, cards: AnkiCardShape[]): Promise<number> // one atomic batch, createCard rows
-  readAnkiCollection(ankiDb: DbDriver): Promise<AnkiNote[]>
-  // reads `col` table models JSON (type 1 = cloze) + `notes` (flds, mid); works on ANY
-  // DbDriver — bun:sqlite in tests, wa-sqlite second connection in the browser.
-  ```
-- PWA wiring: db worker RPC gains `{ kind: 'open-aux'; name: string; bytes: ArrayBuffer }`
-  → writes bytes into OPFS (own root file via FileSystemSyncAccessHandle, name
-  `aux-import.db`) → opens a second wa-sqlite connection on it → subsequent
-  `{ kind: 'exec-aux' }` queries run there; `{ kind: 'close-aux' }` closes+removes.
-  client.ts exposes `openAux(bytes): Promise<DbDriver & { close(): Promise<void> }>`.
-- UI on `/import` page: `import-apkg-input` (file .apkg) → fflate unzip → prefer
-  `collection.anki21` else `collection.anki2`; `collection.anki21b` (zstd) → calm error
-  'exporte no anki com "suportar versões antigas" marcado.' → readAnkiCollection →
-  notesToCards → preview count (`apkg-preview`: 'N cards · básico e cloze') + topic picker
-  (`apkg-track-select`, `apkg-topic-select`, reuse attach-picker style) → `apkg-confirm`
-  → importAnkiCards → goto track.
-- Tests: core (splitFields, notesToCards basic/cloze/html-strip/skip-empty); db
-  (readAnkiCollection against a REAL minimal anki schema built in bun:sqlite: col table
-  with models JSON, notes rows; importAnkiCards atomic + oplog).
+Full PWA (offline shell, install prompt), mind-map, progress share image, light-theme
+a11y pass, deploy docs. DROPPED by user decision mid-milestone: Anki importer and TTS
+(both removed from scope and from the tree).
 
 ## Stream B — PWA install & offline shell
 
@@ -72,12 +30,6 @@ docs) runs after they land.
 
 ## Stream C — TTS, mind-map, progress image
 
-- `lib/tts/index.svelte.ts`: `createTts()` — `speak(text)`, `stop()`, `speaking` rune;
-  prefers pt-BR voice (voiceschanged-aware), rate 1, cancels previous. Graceful no-op
-  when speechSynthesis is absent. Buttons (text style 'ouvir' / 'parar', aria-pressed):
-  - topic notes: in tracks/[id] topic selection area (`tts-topic`) reading
-    `title + '. ' + notes_md` plain text
-  - transcript panel (`tts-transcript`) reading joined cue text.
 - Mind-map: `tracks/[id]/MindMap.svelte` — pure SVG horizontal tree (no lib): nodes =
   topics (rounded rect, hairline stroke, title truncated 24ch, status dot color), edges =
   elbow paths; layout: simple tidy-ish algorithm (depth → x column 220px, leaf rows →
@@ -106,7 +58,6 @@ docs) runs after they land.
   the essentials. `docs/DEPLOY.md` with the long-form steps; README links it.
 - CI: e2e job uploads `cypress/downloads` artifact too (progress image / ics assertions).
 
-Testids new this milestone: install-app, ios-install-hint, import-apkg-input,
-apkg-preview, apkg-track-select, apkg-topic-select, apkg-confirm, tts-topic,
-tts-transcript, view-toggle, track-mindmap, share-progress.
-Copy pt-BR sentence case; tokens only; no icons/emoji. fflate is installed in pwa.
+Testids new this milestone: install-app, ios-install-hint, view-toggle, track-mindmap,
+share-progress.
+Copy pt-BR sentence case; tokens only; no icons/emoji.

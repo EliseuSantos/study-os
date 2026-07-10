@@ -12,9 +12,13 @@
   let datetime = $state('');
   let permission = $state<NotificationPermission | 'unsupported'>('default');
   let pushStatus = $state<'idle' | 'busy' | 'active' | 'error'>('idle');
+  let isIos = $state(false);
+  let isStandalone = $state(true);
 
   onMount(() => {
     permission = typeof Notification === 'undefined' ? 'unsupported' : Notification.permission;
+    isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    isStandalone = window.matchMedia('(display-mode: standalone)').matches;
   });
 
   onDestroy(() => {
@@ -197,4 +201,10 @@
       <span class="type-meta text-text-low" aria-live="polite">{pushLabel}</span>
     {/if}
   </div>
+
+  {#if isIos && !isStandalone}
+    <p data-testid="ios-install-hint" class="type-meta mt-4 text-text-low">
+      no iphone: compartilhar → adicionar à tela de início — necessário para notificações.
+    </p>
+  {/if}
 </section>

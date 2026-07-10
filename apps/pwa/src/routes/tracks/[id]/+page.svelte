@@ -14,6 +14,7 @@
   import TopicContent from './TopicContent.svelte';
   import LessonsPanel from './LessonsPanel.svelte';
   import TrackActions from './TrackActions.svelte';
+  import MindMap from './MindMap.svelte';
 
   const trackId = $derived(page.params.id ?? '');
 
@@ -22,6 +23,7 @@
   // 'root' = the root-level inline create form; a topic id = that node's child form.
   // A single value guarantees only one topic-form exists in the DOM at a time.
   let openFormId = $state<string>('root');
+  let view = $state<'tree' | 'map'>('tree');
 
   $effect(() => {
     const next = createTrackDetailStore(trackId);
@@ -123,9 +125,40 @@
       </button>
     </div>
 
-    <h2 class="type-label mt-10 text-text-low">
-      tópicos{topics.length > 0 ? ` · ${topics.length}` : ''}
-    </h2>
+    <div class="mt-10 flex items-center justify-between gap-3">
+      <h2 class="type-label text-text-low">
+        tópicos{topics.length > 0 ? ` · ${topics.length}` : ''}
+      </h2>
+      <div
+        data-testid="view-toggle"
+        role="group"
+        aria-label="visualização dos tópicos"
+        class="inline-flex overflow-hidden rounded-base border border-border"
+      >
+        <button
+          type="button"
+          aria-pressed={view === 'tree'}
+          onclick={() => (view = 'tree')}
+          class="type-meta cursor-pointer px-3 py-1.5 transition-colors duration-(--dur-base) ease-brand {view ===
+          'tree'
+            ? 'bg-surface-2 text-text-hi'
+            : 'text-text-mid hover:text-text-hi'}"
+        >
+          árvore
+        </button>
+        <button
+          type="button"
+          aria-pressed={view === 'map'}
+          onclick={() => (view = 'map')}
+          class="type-meta cursor-pointer border-l border-hairline px-3 py-1.5 transition-colors duration-(--dur-base) ease-brand {view ===
+          'map'
+            ? 'bg-surface-2 text-text-hi'
+            : 'text-text-mid hover:text-text-hi'}"
+        >
+          mapa
+        </button>
+      </div>
+    </div>
 
     <div class="mt-3">
       <OutlineImport
@@ -141,11 +174,15 @@
       </div>
     {/if}
 
-    <ul data-testid="topic-tree" role="list" class="mt-4">
-      {#each tree as node (node.topic.id)}
-        <TopicNode {node} {selectedId} {collapsed} {openFormId} {actions} />
-      {/each}
-    </ul>
+    {#if view === 'tree'}
+      <ul data-testid="topic-tree" role="list" class="mt-4">
+        {#each tree as node (node.topic.id)}
+          <TopicNode {node} {selectedId} {collapsed} {openFormId} {actions} />
+        {/each}
+      </ul>
+    {:else}
+      <MindMap {topics} {selectedId} onSelect={(id) => actions.select(id)} />
+    {/if}
 
     {#if topics.length === 0}
       <p class="type-item mt-2 text-text-soft">
@@ -159,6 +196,7 @@
 
     <section class="mt-12">
       {#if selectedTopic}
+        <h2 class="mb-6 type-label text-text-low">tópico · {selectedTopic.title}</h2>
         <CardsPanel
           topic={selectedTopic}
           {cards}

@@ -4,6 +4,7 @@
   import { page } from '$app/state';
   import GlobalSearch from '$lib/components/GlobalSearch.svelte';
   import { requestPersistence } from '$lib/db/client';
+  import { initInstall, installState, promptInstall } from '$lib/pwa/install.svelte';
   import { registerServiceWorker } from '$lib/push/register';
   import { startSyncLifecycle } from '$lib/sync/index.svelte';
   import type { Snippet } from 'svelte';
@@ -36,6 +37,7 @@
     window.addEventListener('offline', update);
     void requestPersistence();
     registerServiceWorker();
+    initInstall();
     const stopSync = startSyncLifecycle();
     return () => {
       window.removeEventListener('online', update);
@@ -88,6 +90,16 @@
             <span class="offline-dot" aria-hidden="true"></span>
             offline
           </span>
+        {/if}
+        {#if installState.canInstall}
+          <button
+            data-testid="install-app"
+            type="button"
+            class="type-meta cursor-pointer rounded-micro border border-border px-3 py-1.5 text-text-mid transition-colors duration-(--dur-base) ease-brand hover:text-text-hi"
+            onclick={() => void promptInstall()}
+          >
+            instalar app
+          </button>
         {/if}
         <button
           type="button"
