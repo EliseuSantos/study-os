@@ -5,16 +5,30 @@ teachers. All user data lives in on-device SQLite (wa-sqlite over OPFS); a singl
 Cloudflare Worker adds optional sync (D1, LWW), web push, content proxies and track
 sharing (R2). The app must be fully functional offline with zero cloud configured.
 
-## Spec-driven development (OpenSpec)
+## Spec-driven development (OpenSpec) — the default workflow, unprompted
 
 The repo uses [OpenSpec](https://github.com/Fission-AI/OpenSpec):
-`openspec/specs/<capability>/spec.md` is the current truth; changes are proposed as
-`openspec/changes/<id>/` (proposal + tasks + delta specs) and archived when they land.
-Slash commands: `/opsx:propose` → `/opsx:apply` → `/opsx:archive` (also `explore`,
-`sync`, `update`); CLI via `bun x --package=@fission-ai/openspec openspec <cmd>`
-(`list`, `validate --strict`, `archive`). Project context and artifact rules live in
-`openspec/config.yaml`. Non-trivial features start as a proposal — contracts (types,
-wire formats, testids, pt-BR copy) are frozen in the delta spec **before** code.
+`openspec/specs/<capability>/spec.md` is the current truth; changes live in
+`openspec/changes/<id>/` (proposal + tasks + delta specs) and are archived when they
+land. Project context and artifact rules: `openspec/config.yaml`. CLI:
+`bun x --package=@fission-ai/openspec openspec <cmd>` (`list`, `validate`, `archive`).
+
+**Route work through this flow automatically — the user does NOT need to type
+`/opsx:*` commands.** When the user asks for a feature, behavior change, or anything
+non-trivial in plain language:
+
+1. **Propose first** (openspec-propose skill): create the change with proposal,
+   tasks and delta specs. Contracts (types, wire formats, testids, literal pt-BR
+   copy) are frozen in the delta spec **before any code**.
+2. **Pause for approval** of the proposal — then implement task-by-task
+   (openspec-apply-change), checking tasks off as they complete.
+3. **Archive on landing** (openspec-archive-change): merge deltas into
+   `openspec/specs/` so the main specs stay the current truth.
+
+Skip the ceremony only for: typo/copy fixes, dependency bumps, pure refactors with
+no behavior change, and bug fixes already covered by an existing spec requirement
+(fix + keep the spec true). When in doubt, propose.
+
 Living specs: [sync-protocol](openspec/specs/sync-protocol/spec.md) (narrative
 companion: [docs/SYNC.md](docs/SYNC.md)),
 [content-connectors](openspec/specs/content-connectors/spec.md),
