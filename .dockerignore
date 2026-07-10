@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+.git
+.turbo
+**/.turbo
+**/.svelte-kit
+**/build
+**/dist
+**/.wrangler
+apps/pwa/cypress/downloads
+apps/pwa/cypress/screenshots
+.claude
+openspec/changes
