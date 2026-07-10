@@ -1,0 +1,97 @@
+/* StudyOS color tokens — warm near-black dark theme (default) + warm paper light theme.
+   Every value lifted verbatim from the source visual-direction doc. */
+
+:root {
+  /* ---- Base palette · dark (default) ---- */
+  --bg: #191712;                /* app background · near-black quente */
+  --bg-deep: #141210;           /* focus mode / projection background */
+  --bg-tabbar: #161410;         /* tab bar background */
+  --surface: #221F19;           /* raised card */
+  --surface-2: #252118;         /* texture alt stripe */
+  --hairline: #2B2721;          /* dividers, subtle borders */
+  --border: #3D3830;            /* interactive borders (buttons, inputs) */
+  --border-device: #34302A;     /* device / window frame border */
+
+  --text-hi: #F1ECE3;           /* headings, primary numbers */
+  --text-body: #E7E1D6;         /* list item titles */
+  --text-reading: #D8D2C6;      /* long-form reading */
+  --text-note: #C7C0B4;         /* notes prose */
+  --text-mid: #B2AA9E;          /* secondary */
+  --text-soft: #9A9285;         /* de-emphasized items */
+  --text-low: #7B756A;          /* metadata, labels */
+
+  --accent: #E9A94F;            /* âmbar · oklch(.80 .13 78) — the one accent */
+  --accent-ink: #2B1F09;        /* text on accent */
+  --accent-dim: #B98436;        /* secondary text on accent-tinted surfaces */
+  --accent-tint-12: rgba(233, 169, 79, .12);  /* selected fills */
+  --accent-tint-10: rgba(233, 169, 79, .10);  /* highlighted rows */
+  --accent-tint-09: rgba(233, 169, 79, .09);  /* selected tree rows */
+  --accent-tint-08: rgba(233, 169, 79, .08);  /* selected list cards */
+
+  --success: #86A17C;           /* verde seco · done, mastered, positive deltas */
+
+  /* Heatmap scale (accent alpha ramp on dark) */
+  --heat-0: #2B2721;
+  --heat-1: rgba(233, 169, 79, .22);
+  --heat-2: rgba(233, 169, 79, .42);
+  --heat-3: rgba(233, 169, 79, .66);
+  --heat-4: #E9A94F;
+
+  /* ---- Semantic aliases ---- */
+  --surface-card: var(--surface);
+  --surface-selected: var(--accent-tint-12);
+  --text-heading: var(--text-hi);
+  --text-label: var(--text-low);
+  --status-done: var(--success);
+  --status-active: var(--accent);
+  --status-pending: var(--text-low);
+
+  /* ---- Doc palette (light chrome around dark screens, spec pages) ---- */
+  --paper: #ECE7DD;             /* doc canvas */
+  --paper-card: #FBF8F1;        /* doc card */
+  --paper-hairline: #E2DACB;
+  --paper-border: #D8D0C1;
+  --paper-ink: #201E19;
+  --paper-ink-2: #35312A;
+  --paper-ink-3: #48433B;
+  --paper-ink-mid: #5C564C;
+  --paper-ink-low: #837A6D;
+  --paper-link: #B0791F;
+  --paper-link-hover: #8A5E13;
+}
+
+/* ---- Light theme · warm paper (mesmos tokens, uso diurno) ---- */
+[data-theme="light"] {
+  --bg: #F6F2EA;
+  --bg-deep: #F6F2EA;
+  --bg-tabbar: #F0EBE1;
+  --surface: #FFFFFF;
+  --surface-2: #F0EBE1;
+  --hairline: #E2DACB;
+  --border: #E2DACB;
+  --border-device: #E2DACB;
+
+  --text-hi: #22201B;
+  --text-body: #35312A;
+  --text-reading: #35312A;
+  --text-note: #48433B;
+  --text-mid: #5C564C;
+  --text-soft: #6E6659;
+  --text-low: #8A8175;
+
+  --accent: #C98A2E;            /* darkened to hold AA on light */
+  --accent-ink: #FFF7EA;
+  --accent-dim: #B0791F;
+  --accent-tint-12: rgba(201, 138, 46, .12);
+  --accent-tint-10: rgba(201, 138, 46, .10);
+  --accent-tint-09: rgba(201, 138, 46, .09);
+  --accent-tint-08: rgba(201, 138, 46, .08);
+
+  --success: #7C9773;
+
+  --heat-0: #E2DACB;
+  --heat-1: rgba(201, 138, 46, .22);
+  --heat-2: rgba(201, 138, 46, .42);
+  --heat-3: rgba(201, 138, 46, .66);
+  --heat-4: #C98A2E;
+}

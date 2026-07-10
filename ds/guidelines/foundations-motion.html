@@ -1,0 +1,14 @@
+<!-- @dsCard group="Foundations" viewport="700x140" name="Motion" subtitle="120–200ms · cubic-bezier(.2,0,0,1) · reduced-motion" -->
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css">
+<style>body{margin:0;background:var(--bg);height:140px;display:flex;align-items:center;gap:36px;padding:0 30px;box-sizing:border-box;font-family:var(--font-display)}
+@keyframes slide{0%,15%{transform:translateX(0)}50%,65%{transform:translateX(120px)}100%{transform:translateX(0)}}
+.dot{width:16px;height:16px;border-radius:var(--radius-micro);background:var(--accent)}
+@media (prefers-reduced-motion:no-preference){.dot{animation:slide 2.4s var(--ease) infinite}}</style></head>
+<body>
+<div style="width:170px"><div class="dot"></div></div>
+<div>
+<div style="font-size:22px;font-weight:600;color:var(--text-hi)">120–200ms</div>
+<div style="font-size:11px;color:var(--text-low);margin-top:4px">cubic-bezier(.2,0,0,1) · check = 160ms · pausa esmaece a tela · sem bounce, sem confete</div>
+</div>
+</body></html>
