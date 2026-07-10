@@ -12,3 +12,4 @@ coverage/
 apps/pwa/cypress/screenshots/
 apps/pwa/cypress/videos/
 apps/pwa/cypress/downloads/
+.pve/
