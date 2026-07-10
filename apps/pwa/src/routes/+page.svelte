@@ -1,10 +1,20 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
+  import type { DueReview } from '@studyos/db';
   import { createGoalsStore } from '$lib/stores/goals.svelte';
+  import { createQueueStore } from '$lib/stores/queue.svelte';
   import { requestSync, syncState } from '$lib/sync/index.svelte';
 
   const store = createGoalsStore();
+  const queue = createQueueStore();
   let title = $state('');
+
+  const queueCount = $derived(queue.items.length);
+
+  function dueLabel(item: DueReview): string {
+    const startOfToday = new Date().setHours(0, 0, 0, 0);
+    return item.dueAt !== null && item.dueAt < startOfToday ? 'atrasado' : 'agora';
+  }
 
   const syncLabel = $derived.by(() => {
     switch (syncState.status) {
@@ -21,7 +31,10 @@
     }
   });
 
-  onDestroy(() => store.destroy());
+  onDestroy(() => {
+    store.destroy();
+    queue.destroy();
+  });
 
   function onsubmit(event: SubmitEvent) {
     event.preventDefault();
@@ -39,9 +52,43 @@
   <title>StudyOS — hoje</title>
 </svelte:head>
 
+<section class="mx-auto w-full max-w-2xl px-4 pt-8">
+  <p class="type-label text-text-low">
+    fila de hoje · {queueCount}
+    {queueCount === 1 ? 'item' : 'itens'}
+  </p>
+  <h1 class="type-h1 mt-2 text-text-hi">fila de hoje</h1>
+
+  <ul data-testid="today-queue" class="mt-6">
+    {#each queue.items as item (item.refKind + item.refId)}
+      <li
+        data-testid="today-item"
+        class="flex items-baseline justify-between gap-3 border-b border-hairline py-3 first:border-t"
+      >
+        <span class="type-item min-w-0 flex-1 text-text-body">{item.title}</span>
+        <span class="type-meta shrink-0 text-text-low">{dueLabel(item)}</span>
+      </li>
+    {/each}
+  </ul>
+
+  {#if queueCount === 0}
+    <p data-testid="today-empty" class="type-item mt-2 text-text-soft">
+      fila zerada. descanse a memória — ela consolida dormindo.
+    </p>
+  {:else}
+    <a
+      data-testid="start-next"
+      href="/review"
+      class="mt-6 inline-flex h-(--h-button-md) items-center rounded-base bg-accent px-5 font-semibold text-accent-ink transition-opacity duration-(--dur-base) ease-brand hover:opacity-90"
+    >
+      começar revisão · {queueCount}
+      {queueCount === 1 ? 'item' : 'itens'}
+    </a>
+  {/if}
+</section>
+
 <section class="mx-auto w-full max-w-2xl px-4 py-8">
-  <p class="type-label text-text-low">hoje</p>
-  <h1 class="type-h1 mt-2 text-text-hi">objetivos</h1>
+  <h2 class="type-label text-text-low">objetivos</h2>
 
   <form data-testid="goal-form" class="mt-8" {onsubmit}>
     <label class="type-label block text-text-low" for="goal-title">novo objetivo</label>

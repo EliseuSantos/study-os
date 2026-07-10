@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@journeyapps/wa-sqlite": "^1.7.0",
+    "@studyos/core": "workspace:*",
     "@studyos/db": "workspace:*",
     "@studyos/shared": "workspace:*",
     "bits-ui": "^2.11.4"

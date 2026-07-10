@@ -1,11 +1,23 @@
 <script lang="ts">
   import '../app.css';
   import { onMount } from 'svelte';
+  import { page } from '$app/state';
   import { requestPersistence } from '$lib/db/client';
   import { startSyncLifecycle } from '$lib/sync/index.svelte';
   import type { Snippet } from 'svelte';
 
   let { children }: { children: Snippet } = $props();
+
+  const NAV = [
+    { href: '/', label: 'hoje' },
+    { href: '/tracks', label: 'trilhas' },
+    { href: '/study', label: 'estudar' },
+  ] as const;
+
+  function isActive(href: string): boolean {
+    if (href === '/') return page.url.pathname === '/' || page.url.pathname === '/review';
+    return page.url.pathname.startsWith(href);
+  }
 
   let theme = $state<'dark' | 'light'>('dark');
   let online = $state(true);
@@ -47,6 +59,20 @@
     <div class="mx-auto flex w-full max-w-2xl items-center gap-3 px-4 py-3">
       <span class="brand-mark" aria-hidden="true"></span>
       <span class="text-[15px] font-semibold tracking-tight text-text-hi">StudyOS</span>
+
+      <nav class="ml-6 flex items-center gap-4" aria-label="principal">
+        {#each NAV as item (item.href)}
+          <a
+            href={item.href}
+            aria-current={isActive(item.href) ? 'page' : undefined}
+            class="type-meta transition-colors duration-(--dur-base) ease-brand {isActive(item.href)
+              ? 'text-accent'
+              : 'text-text-mid hover:text-text-hi'}"
+          >
+            {item.label}
+          </a>
+        {/each}
+      </nav>
 
       <span class="ml-auto flex items-center gap-4">
         {#if !online}
