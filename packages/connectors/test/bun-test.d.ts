@@ -7,6 +7,13 @@ declare module 'bun:test' {
     toBe(expected: unknown): void;
     toEqual(expected: unknown): void;
     toThrow(expected?: string | RegExp): void;
+    toBeCloseTo(expected: number, numDigits?: number): void;
+    toBeGreaterThan(expected: number): void;
+    toBeGreaterThanOrEqual(expected: number): void;
+    toBeLessThan(expected: number): void;
+    toBeLessThanOrEqual(expected: number): void;
+    toBeNull(): void;
+    toHaveLength(expected: number): void;
   }
   export function expect(actual: unknown): Expectation;
 }

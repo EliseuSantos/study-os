@@ -3,6 +3,7 @@ import SQLiteESMFactory from '@journeyapps/wa-sqlite/dist/wa-sqlite.mjs';
 import wasmUrl from '@journeyapps/wa-sqlite/dist/wa-sqlite.wasm?url';
 import { OPFSCoopSyncVFS } from '@journeyapps/wa-sqlite/src/examples/OPFSCoopSyncVFS.js';
 import initSql from '@studyos/db/migrations/0001_init.sql?raw';
+import proxyUsageSql from '@studyos/db/migrations/0002_proxy_usage.sql?raw';
 import { migrate, type Row, type SqlValue, type Stmt } from '@studyos/db';
 import { DB_CHANNEL, DB_NAME } from '@studyos/shared';
 import type { DbBroadcast, DbReady, DbRequest, DbResponse } from './rpc';
@@ -74,7 +75,10 @@ async function init(): Promise<void> {
   const vfs = await OPFSCoopSyncVFS.create('studyos', module);
   sqlite3.vfs_register(vfs, true);
   db = await sqlite3.open_v2(DB_NAME);
-  await migrate({ exec, batch: runBatch }, [{ version: 1, sql: initSql }]);
+  await migrate({ exec, batch: runBatch }, [
+    { version: 1, sql: initSql },
+    { version: 2, sql: proxyUsageSql },
+  ]);
 }
 
 function errorMessage(error: unknown): string {

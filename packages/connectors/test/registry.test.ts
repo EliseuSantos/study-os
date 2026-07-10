@@ -1,18 +1,26 @@
 import { expect, test } from 'bun:test';
-import { registry, type Connector } from '../src';
+import {
+  connectors,
+  getConnector,
+  stackexchangeConnector,
+  webConnector,
+  wikipediaConnector,
+  youtubeConnector,
+} from '../src';
 
-test('registry starts empty and accepts connectors', async () => {
-  expect(registry.size).toBe(0);
+test('registry has the stable order wikipedia, stackexchange, youtube, web', () => {
+  expect(connectors.map((c) => c.source)).toEqual(['wikipedia', 'stackexchange', 'youtube', 'web']);
+  expect(connectors.map((c) => c.kind)).toEqual(['article', 'qa', 'video', 'article']);
+});
 
-  const fake: Connector = {
-    source: 'fake',
-    search: () => Promise.resolve([]),
-    resolve: () => Promise.resolve(null),
-  };
-  registry.set(fake.source, fake);
-  expect(registry.size).toBe(1);
-  expect(await registry.get('fake')?.search('query')).toEqual([]);
+test('getConnector resolves each source to its connector', () => {
+  expect(getConnector('wikipedia')).toBe(wikipediaConnector);
+  expect(getConnector('stackexchange')).toBe(stackexchangeConnector);
+  expect(getConnector('youtube')).toBe(youtubeConnector);
+  expect(getConnector('web')).toBe(webConnector);
+});
 
-  registry.delete(fake.source);
-  expect(registry.size).toBe(0);
+test('getConnector returns null for unknown sources', () => {
+  expect(getConnector('vimeo')).toBeNull();
+  expect(getConnector('')).toBeNull();
 });

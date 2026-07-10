@@ -1,1 +1,11 @@
 SYNC_TOKEN=dev-token
+# Generate the VAPID values with: bun run scripts/gen-vapid.ts
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:dev@example.com
+# Optional: YouTube Data API v3 key — without it /proxy/youtube/search answers 503
+YOUTUBE_API_KEY=
+# Optional: Firecrawl API key — without it /proxy/firecrawl/* answers 503
+FIRECRAWL_API_KEY=
+# Monthly credit ceiling for the Firecrawl free plan (default 1000)
+FIRECRAWL_MONTHLY_CREDITS=1000

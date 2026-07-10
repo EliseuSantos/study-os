@@ -7,14 +7,12 @@ describe('sync loop', () => {
   let workerUp = false;
 
   before(() => {
-    cy.request({ url: `${WORKER}/health`, failOnStatusCode: false, timeout: 3000 }).then(
-      (res) => {
-        workerUp = res.status === 200;
-      },
-      () => {
-        workerUp = false;
-      },
-    );
+    // cy.request fails the test on ECONNREFUSED, so probe with curl instead
+    cy.exec(`curl -sf -o /dev/null --max-time 3 ${WORKER}/health`, {
+      failOnNonZeroExit: false,
+    }).then((result) => {
+      workerUp = (result as unknown as { exitCode?: number }).exitCode === 0;
+    });
   });
 
   beforeEach(function () {

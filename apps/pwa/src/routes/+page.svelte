@@ -1,10 +1,16 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
   import { createGoalsStore } from '$lib/stores/goals.svelte';
+  import { createTodayStore } from '$lib/stores/today.svelte';
   import { requestSync, syncState } from '$lib/sync/index.svelte';
 
   const store = createGoalsStore();
+  const today = createTodayStore();
   let title = $state('');
+
+  const itemCount = $derived(today.items.length);
+  const reviewCount = $derived(today.items.filter((i) => i.kind === 'review').length);
+  const hasBlocks = $derived(today.items.some((i) => i.kind === 'block'));
 
   const syncLabel = $derived.by(() => {
     switch (syncState.status) {
@@ -21,7 +27,10 @@
     }
   });
 
-  onDestroy(() => store.destroy());
+  onDestroy(() => {
+    store.destroy();
+    today.destroy();
+  });
 
   function onsubmit(event: SubmitEvent) {
     event.preventDefault();
@@ -39,9 +48,73 @@
   <title>StudyOS — hoje</title>
 </svelte:head>
 
+<section class="mx-auto w-full max-w-2xl px-4 pt-8">
+  <p class="type-label text-text-low">
+    fila de hoje · {itemCount}
+    {itemCount === 1 ? 'item' : 'itens'}
+  </p>
+  <h1 class="type-h1 mt-2 text-text-hi">fila de hoje</h1>
+
+  {#if today.replanNote}
+    <p data-testid="replan-note" class="type-meta mt-3 text-text-low">
+      ontem ficou pendente — redistribuído.
+    </p>
+  {/if}
+
+  {#if today.targets.length > 0}
+    <div class="mt-6">
+      {#each today.targets as target (target.id)}
+        <div data-testid="target-progress" class="py-2">
+          <div class="h-1 overflow-hidden rounded-full bg-hairline">
+            <div class="h-1 rounded-full bg-accent" style="width: {target.pct}%"></div>
+          </div>
+          <p class="type-meta mt-1.5 text-text-low">{target.label}</p>
+        </div>
+      {/each}
+    </div>
+  {/if}
+
+  <ul data-testid="today-queue" class="mt-6">
+    {#each today.items as item (item.kind + item.sort + item.title)}
+      <li
+        data-testid="today-item"
+        data-kind={item.kind}
+        class="flex items-baseline justify-between gap-3 border-b border-hairline py-3 first:border-t"
+      >
+        <span class="type-item min-w-0 flex-1 text-text-body">{item.title}</span>
+        {#if item.subtitle !== null}
+          <span class="type-meta shrink-0 text-text-low">{item.subtitle}</span>
+        {/if}
+      </li>
+    {/each}
+  </ul>
+
+  {#if itemCount === 0}
+    <p data-testid="today-empty" class="type-item mt-2 text-text-soft">
+      fila zerada. descanse a memória — ela consolida dormindo.
+    </p>
+  {:else if reviewCount > 0}
+    <a
+      data-testid="start-next"
+      href="/review"
+      class="mt-6 inline-flex h-(--h-button-md) items-center rounded-base bg-accent px-5 font-semibold text-accent-ink transition-opacity duration-(--dur-base) ease-brand hover:opacity-90"
+    >
+      começar revisão · {reviewCount}
+      {reviewCount === 1 ? 'item' : 'itens'}
+    </a>
+  {:else if hasBlocks}
+    <a
+      data-testid="start-next"
+      href="/study"
+      class="mt-6 inline-flex h-(--h-button-md) items-center rounded-base bg-accent px-5 font-semibold text-accent-ink transition-opacity duration-(--dur-base) ease-brand hover:opacity-90"
+    >
+      começar estudo
+    </a>
+  {/if}
+</section>
+
 <section class="mx-auto w-full max-w-2xl px-4 py-8">
-  <p class="type-label text-text-low">hoje</p>
-  <h1 class="type-h1 mt-2 text-text-hi">objetivos</h1>
+  <h2 class="type-label text-text-low">objetivos</h2>
 
   <form data-testid="goal-form" class="mt-8" {onsubmit}>
     <label class="type-label block text-text-low" for="goal-title">novo objetivo</label>

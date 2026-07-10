@@ -7,6 +7,7 @@ import { beforeEach, describe, expect, test } from 'bun:test';
 import type { Env } from '../src/env';
 import { createApp } from '../src/index';
 import { createFakeD1 } from './fake-d1';
+import { FakeR2 } from './fake-r2';
 
 const TOKEN = 'test';
 const app = createApp();
@@ -56,6 +57,10 @@ describe('two devices syncing through the real HTTP app', () => {
       DB: await createFakeD1(),
       SYNC_TOKEN: TOKEN,
       ASSETS: { fetch: async () => new Response(null, { status: 404 }) },
+      SHARES: new FakeR2(),
+      VAPID_PUBLIC_KEY: 'test-public-key',
+      VAPID_PRIVATE_KEY: '{}',
+      VAPID_SUBJECT: 'mailto:test@example.com',
     };
     transport = httpTransport(env);
     dbA = await createLocalDb();

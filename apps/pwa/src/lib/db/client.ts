@@ -1,5 +1,12 @@
 import { browser } from '$app/environment';
-import type { DbDriver, Row, SqlValue, Stmt } from '@studyos/db';
+import {
+  ensureSearchIndex,
+  reindexAll,
+  type DbDriver,
+  type Row,
+  type SqlValue,
+  type Stmt,
+} from '@studyos/db';
 import type { DbReady, DbRequest, DbResponse } from './rpc';
 
 let instance: Promise<DbDriver> | null = null;
@@ -64,7 +71,7 @@ async function createDriver(): Promise<DbDriver> {
     });
   }
 
-  return {
+  const driver: DbDriver = {
     exec(sql: string, params?: SqlValue[]): Promise<Row[]> {
       const id = nextId++;
       return send(
@@ -76,4 +83,10 @@ async function createDriver(): Promise<DbDriver> {
       await send({ id, kind: 'batch', stmts, mutates: mutatedTables(stmts) });
     },
   };
+
+  // Local-only FTS index (see packages/db/src/search.ts): create after migrate,
+  // then rebuild in the background so global search reflects the current data.
+  await ensureSearchIndex(driver);
+  void reindexAll(driver);
+  return driver;
 }
