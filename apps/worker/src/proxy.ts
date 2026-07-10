@@ -18,7 +18,7 @@ interface YoutubeSearchUpstream {
   }[];
 }
 
-/** Frozen wire format (docs/M4-CONTRACTS.md). */
+/** Frozen wire format (specs/content-connectors.md). */
 interface YoutubeSearchItem {
   id: string;
   title: string;

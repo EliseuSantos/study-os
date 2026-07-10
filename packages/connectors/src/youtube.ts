@@ -1,6 +1,6 @@
 import { MAX_RESULTS, isRecord, type Connector, type ContentResult, type FetchLike } from './types';
 
-// App-relative proxy: the worker adds the API key (see docs/M4-CONTRACTS.md).
+// App-relative proxy: the worker adds the API key (see specs/content-connectors.md).
 const SEARCH_URL = '/proxy/youtube/search?q=';
 
 export const youtubeConnector: Connector = {

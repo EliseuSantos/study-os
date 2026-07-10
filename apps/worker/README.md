@@ -22,7 +22,7 @@ See `docs/SYNC.md` for the frozen wire contract.
 
 ## Content proxy
 
-Three bearer-auth'd `GET` endpoints back the M4 content features (`docs/M4-CONTRACTS.md`),
+Three bearer-auth'd `GET` endpoints back the M4 content features (`specs/content-connectors.md`),
 all served from `src/proxy.ts` and cached with the workerd Cache API (`caches.default`,
 behind the `src/cache.ts` seam so bun tests can inject a fake):
 
@@ -65,7 +65,7 @@ the month turns. `FIRECRAWL_API_KEY` is optional (503 without it, source hidden)
 
 ## Track sharing
 
-Teacher mode shares a track as a `.studyos.json` snapshot (`docs/M5-CONTRACTS.md`), served
+Teacher mode shares a track as a `.studyos.json` snapshot (`specs/track-snapshot.md`), served
 from `src/share.ts` with the `SHARES` R2 bucket (`studyos-shares` in `wrangler.jsonc`):
 
 - `POST /share` (bearer) - body is the raw snapshot JSON, capped at 1 MB (413 above it) and

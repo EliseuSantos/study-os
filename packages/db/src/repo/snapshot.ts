@@ -15,7 +15,7 @@ import { getTrack } from './tracks';
 import { listTopics } from './topics';
 import { listLessons } from './lessons';
 
-// Structural copy of core's TrackSnapshot (docs/M5-CONTRACTS.md); db must not
+// Structural copy of core's TrackSnapshot (specs/track-snapshot.md); db must not
 // depend on @studyos/core. Keys are LOCAL ordinals, not uuids.
 export interface TrackSnapshotShape {
   format: 'studyos-track';

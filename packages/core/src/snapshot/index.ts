@@ -1,4 +1,4 @@
-// M5 snapshot: the `.studyos.json` track export format (docs/M5-CONTRACTS.md,
+// M5 snapshot: the `.studyos.json` track export format (specs/track-snapshot.md,
 // frozen). Pure module: rows in → portable snapshot out, plus validation and a
 // deterministic content hash. Row inputs are LOCAL structural shapes — any
 // object with these fields works (packages/db rows are supersets).
