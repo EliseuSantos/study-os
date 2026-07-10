@@ -3,7 +3,7 @@ import SQLiteESMFactory from '@journeyapps/wa-sqlite/dist/wa-sqlite.mjs';
 import wasmUrl from '@journeyapps/wa-sqlite/dist/wa-sqlite.wasm?url';
 import { OPFSCoopSyncVFS } from '@journeyapps/wa-sqlite/src/examples/OPFSCoopSyncVFS.js';
 import initSql from '@studyos/db/migrations/0001_init.sql?raw';
-import type { Row, SqlValue, Stmt } from '@studyos/db';
+import { migrate, type Row, type SqlValue, type Stmt } from '@studyos/db';
 import { DB_CHANNEL, DB_NAME } from '@studyos/shared';
 import type { DbBroadcast, DbReady, DbRequest, DbResponse } from './rpc';
 
@@ -68,33 +68,13 @@ async function batch(stmts: Stmt[]): Promise<void> {
   }
 }
 
-// integration: swap for migrate() from @studyos/db once packages/db/src/migrate.ts lands
-async function migrate(): Promise<void> {
-  const rows = await exec('PRAGMA user_version');
-  const version = Number(rows[0]?.['user_version'] ?? 0);
-  if (version >= 1) return;
-  await exec('BEGIN IMMEDIATE');
-  try {
-    await exec(initSql);
-    await exec('PRAGMA user_version = 1');
-    await exec('COMMIT');
-  } catch (error) {
-    try {
-      await exec('ROLLBACK');
-    } catch {
-      /* rollback failure is superseded by the original error */
-    }
-    throw error;
-  }
-}
-
 async function init(): Promise<void> {
   const module = await SQLiteESMFactory({ locateFile: () => wasmUrl });
   sqlite3 = SQLite.Factory(module);
   const vfs = await OPFSCoopSyncVFS.create('studyos', module);
   sqlite3.vfs_register(vfs, true);
   db = await sqlite3.open_v2(DB_NAME);
-  await migrate();
+  await migrate({ exec, batch: runBatch }, [{ version: 1, sql: initSql }]);
 }
 
 function errorMessage(error: unknown): string {

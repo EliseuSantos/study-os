@@ -5,5 +5,6 @@ export const DB_CHANNEL = 'studyos-db';
 export const SETTINGS_KEYS = {
   deviceId: 'device_id',
   syncCursor: 'sync_cursor',
+  syncToken: 'sync_token',
   theme: 'theme',
 } as const;

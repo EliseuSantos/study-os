@@ -2,6 +2,7 @@
   import '../app.css';
   import { onMount } from 'svelte';
   import { requestPersistence } from '$lib/db/client';
+  import { startSyncLifecycle } from '$lib/sync/index.svelte';
   import type { Snippet } from 'svelte';
 
   let { children }: { children: Snippet } = $props();
@@ -16,9 +17,11 @@
     window.addEventListener('online', update);
     window.addEventListener('offline', update);
     void requestPersistence();
+    const stopSync = startSyncLifecycle();
     return () => {
       window.removeEventListener('online', update);
       window.removeEventListener('offline', update);
+      stopSync();
     };
   });
 

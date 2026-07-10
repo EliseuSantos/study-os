@@ -38,6 +38,9 @@ No auth. `{ "ok": true }`.
   writes `oplog` (prevents ping-pong).
 - Soft delete on the wire is an `upsert` with `deleted_at` set. `op: 'delete'` is reserved
   for future hard purges.
+- Payloads are **full rows**: the LWW upsert writes every declared column, so a missing
+  column becomes NULL and would override SQL defaults. `localWrite` always serializes the
+  complete row.
 - Cursor and `device_id` are stored in the `settings` table (local-only, never synced).
 - Sync triggers: app open, `online` event, 3s debounce after a local write, manual button.
   Single-flight; exponential backoff on failure; offline skips silently.

@@ -1,7 +1,7 @@
 import { buildPullStmt, buildPushStmts, rowsToPull } from '@studyos/db/sync/server-core';
 import type { OpLogEntry, PushRequest, PushResponse } from '@studyos/shared';
 import type { Handler } from 'hono';
-import { d1Driver } from './d1-driver';
+import { d1Driver } from '@studyos/db/adapters/d1';
 import type { Env } from './env';
 
 function isOpLogEntry(value: unknown): value is OpLogEntry {

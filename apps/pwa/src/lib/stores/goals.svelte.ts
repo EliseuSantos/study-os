@@ -1,28 +1,31 @@
-import { newId, now } from '@studyos/shared';
-
-export interface GoalItem {
-  id: string;
-  title: string;
-  createdAt: number;
-}
+import { getOrCreateDeviceId, createGoal, listGoals } from '@studyos/db';
+import type { GoalRow } from '@studyos/shared';
+import { getDb } from '$lib/db/client';
+import { liveQuery } from '$lib/db/live.svelte';
 
 export interface GoalsStore {
-  get goals(): GoalItem[];
-  add(title: string): void;
+  get goals(): GoalRow[];
+  add(title: string): Promise<void>;
+  destroy(): void;
 }
 
 export function createGoalsStore(): GoalsStore {
-  let goals = $state<GoalItem[]>([]);
+  const live = liveQuery((db) => listGoals(db), ['goals'], [] as GoalRow[]);
 
   return {
     get goals() {
-      return goals;
+      return live.value;
     },
-    add(title: string) {
+    async add(title: string) {
       const trimmed = title.trim();
       if (!trimmed) return;
-      // integration: wire to @studyos/db repo (createGoal/listGoals) — local-only for M1-C visual QA
-      goals = [{ id: newId(), title: trimmed, createdAt: now() }, ...goals];
+      const db = await getDb();
+      const deviceId = await getOrCreateDeviceId(db);
+      await createGoal(db, deviceId, { title: trimmed });
+      await live.refresh();
+    },
+    destroy() {
+      live.destroy();
     },
   };
 }

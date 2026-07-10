@@ -1,17 +1,37 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import { createGoalsStore } from '$lib/stores/goals.svelte';
+  import { requestSync, syncState } from '$lib/sync/index.svelte';
 
   const store = createGoalsStore();
   let title = $state('');
 
+  const syncLabel = $derived.by(() => {
+    switch (syncState.status) {
+      case 'syncing':
+        return 'sincronizando…';
+      case 'error':
+        return 'não sincronizou — tenta de novo sozinho';
+      case 'offline':
+        return 'offline · sincroniza quando voltar';
+      case 'disabled':
+        return 'local apenas · sync não configurado';
+      default:
+        return 'local primeiro · sincroniza quando online';
+    }
+  });
+
+  onDestroy(() => store.destroy());
+
   function onsubmit(event: SubmitEvent) {
     event.preventDefault();
-    store.add(title);
+    const value = title;
     title = '';
+    void store.add(value);
   }
 
   function syncNow() {
-    // integration: wire to the sync client (manual trigger) in M1 integration
+    void requestSync();
   }
 </script>
 
@@ -69,6 +89,6 @@
     >
       sincronizar
     </button>
-    <span class="type-meta text-text-low">local primeiro · sincroniza quando online</span>
+    <span class="type-meta text-text-low" aria-live="polite">{syncLabel}</span>
   </div>
 </section>

@@ -132,4 +132,4 @@ CREATE INDEX idx_topics_track_parent ON topics(track_id, parent_id);
 CREATE INDEX idx_sessions_started ON sessions(started_at);
 CREATE INDEX idx_oplog_synced ON oplog(synced);
 CREATE INDEX idx_server_oplog_updated ON server_oplog(updated_at);
-CREATE INDEX idx_content_topic ON content_items(topic_id)
+CREATE INDEX idx_content_topic ON content_items(topic_id);
