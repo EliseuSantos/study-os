@@ -32,16 +32,14 @@ export function buildPullStmt(since: number, deviceId: string, limit = SYNC_BATC
 }
 
 export function rowsToPull(rows: Row[], since: number, limit = SYNC_BATCH_SIZE): PullResponse {
-  const ops = rows.map(
-    (r): OpLogEntry => ({
-      tbl: r['tbl'] as string,
-      row_id: r['row_id'] as string,
-      op: r['op'] as OpLogEntry['op'],
-      payload: r['payload'] as string,
-      updated_at: r['updated_at'] as number,
-      device_id: r['device_id'] as string,
-    }),
-  );
+  const ops = rows.map((r): OpLogEntry => ({
+    tbl: r['tbl'] as string,
+    row_id: r['row_id'] as string,
+    op: r['op'] as OpLogEntry['op'],
+    payload: r['payload'] as string,
+    updated_at: r['updated_at'] as number,
+    device_id: r['device_id'] as string,
+  }));
   let cursor = since;
   for (const op of ops) if (op.updated_at > cursor) cursor = op.updated_at;
   return { ops, cursor, has_more: ops.length === limit };

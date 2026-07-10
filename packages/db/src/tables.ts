@@ -148,7 +148,16 @@ export const SYNCED_TABLES = {
     columns: ['id', 'track_id', 'metric', 'period', 'value', 'updated_at', 'deleted_at'],
   },
   reminders: {
-    columns: ['id', 'title', 'ref_kind', 'ref_id', 'notify_at', 'rrule', 'updated_at', 'deleted_at'],
+    columns: [
+      'id',
+      'title',
+      'ref_kind',
+      'ref_id',
+      'notify_at',
+      'rrule',
+      'updated_at',
+      'deleted_at',
+    ],
   },
 } as const satisfies Record<string, { columns: readonly string[] }>;
 
