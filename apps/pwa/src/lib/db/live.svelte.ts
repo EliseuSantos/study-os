@@ -20,8 +20,14 @@ export function liveQuery<T>(
 
   async function refresh(): Promise<void> {
     if (!browser) return;
-    const db = await getDb();
-    value = await fn(db);
+    try {
+      const db = await getDb();
+      value = await fn(db);
+    } catch (error) {
+      // db unavailable (e.g. OPFS blocked on insecure origins) — the shell
+      // banner explains it; queries keep their initial value
+      if (import.meta.env.DEV) console.error('[liveQuery]', error);
+    }
   }
 
   if (browser) {

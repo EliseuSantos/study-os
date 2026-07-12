@@ -32,7 +32,9 @@ function startReindexWatcher(): void {
     if (timer !== null) clearTimeout(timer);
     timer = setTimeout(() => {
       timer = null;
-      void getDb().then((db) => reindexAll(db));
+      void getDb()
+        .then((db) => reindexAll(db))
+        .catch(() => {});
     }, REINDEX_DEBOUNCE_MS);
   });
 }

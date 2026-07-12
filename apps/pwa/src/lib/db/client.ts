@@ -7,13 +7,38 @@ import {
   type SqlValue,
   type Stmt,
 } from '@studyos/db';
+import { markDbReady, markDbUnavailable } from '$lib/stores/db-state.svelte';
 import type { DbReady, DbRequest, DbResponse } from './rpc';
 
 let instance: Promise<DbDriver> | null = null;
 
+// A dev-server module reload can kill the worker mid-boot; retries with
+// backoff recover, while a real failure (no OPFS) keeps failing the same way.
+async function createDriverWithRetry(): Promise<DbDriver> {
+  const delays = [600, 1500, 3000];
+  for (const delay of delays) {
+    try {
+      return await createDriver();
+    } catch (error) {
+      if (typeof navigator !== 'undefined' && !window.isSecureContext) throw error;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  return createDriver();
+}
+
 export function getDb(): Promise<DbDriver> {
   if (!browser) return Promise.reject(new Error('getDb is browser-only'));
-  instance ??= createDriver();
+  instance ??= createDriverWithRetry().then(
+    (driver) => {
+      markDbReady();
+      return driver;
+    },
+    (error: unknown) => {
+      markDbUnavailable();
+      throw error;
+    },
+  );
   return instance;
 }
 
@@ -46,13 +71,20 @@ async function createDriver(): Promise<DbDriver> {
   >();
   let nextId = 1;
 
-  await new Promise<void>((resolve, reject) => {
-    worker.onmessage = (event: MessageEvent<DbReady>) => {
-      if (event.data.kind === 'ready') resolve();
-      else reject(new Error(event.data.error));
-    };
-    worker.onerror = (event) => reject(new Error(event.message || 'db worker failed to start'));
-  });
+  try {
+    await new Promise<void>((resolve, reject) => {
+      worker.onmessage = (event: MessageEvent<DbReady>) => {
+        if (event.data.kind === 'ready') resolve();
+        else reject(new Error(event.data.error));
+      };
+      worker.onerror = (event) => reject(new Error(event.message || 'db worker failed to start'));
+    });
+  } catch (error) {
+    // A half-booted worker still holds OPFS locks — kill it before any retry
+    // spawns a second VFS over the same files.
+    worker.terminate();
+    throw error;
+  }
 
   worker.onerror = null;
   worker.onmessage = (event: MessageEvent<DbResponse>) => {

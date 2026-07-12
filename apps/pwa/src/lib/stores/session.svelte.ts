@@ -89,6 +89,8 @@ export function createSessionStore(): SessionStore {
         netSeconds = 0;
         phase = 'running';
         startTicking();
+      } catch {
+        // db unavailable — the shell banner explains it
       } finally {
         starting = false;
       }
@@ -126,6 +128,8 @@ export function createSessionStore(): SessionStore {
         sessionId = null;
         netSeconds = 0;
         phase = 'idle';
+      } catch {
+        // db unavailable — the shell banner explains it
       } finally {
         saving = false;
       }

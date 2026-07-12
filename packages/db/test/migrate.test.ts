@@ -27,6 +27,7 @@ const EXPECTED_TABLES = [
   'push_subscriptions',
   'track_shares',
   'proxy_usage',
+  'annotations',
 ];
 
 test('schema applies cleanly and sets user_version to the latest migration', async () => {

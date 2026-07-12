@@ -27,6 +27,15 @@ export function createApp(): Hono<{ Bindings: Env }> {
   // teacher-side POST goes through bearer auth, mounted inline on its route.
   app.get('/share/:id', handleShareGet);
   app.post('/share', bearerAuth, handleShareCreate);
+  // Dynamic app routes (run_worker_first patterns without a prerendered file)
+  // get the SPA fallback; everything static is served by the assets layer.
+  app.get('*', async (c) => {
+    const res = await c.env.ASSETS.fetch(new Request(new URL('/200.html', c.req.url).href));
+    return new Response(res.body, {
+      status: 200,
+      headers: { 'content-type': 'text/html; charset=utf-8' },
+    });
+  });
   return app;
 }
 

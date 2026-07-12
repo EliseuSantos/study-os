@@ -7,6 +7,7 @@ describe('planner and routine loop', () => {
 
   it('creates a routine for today and sees a plan block on Today', () => {
     cy.visit('/routines');
+    cy.get('[data-testid="routine-open-modal"]').click();
     cy.get('[data-testid="routine-title-input"]').type(routineTitle);
     const todayDow = new Date().getDay();
     cy.get(`[data-testid="routine-day-${todayDow}"]`).click();
@@ -20,14 +21,15 @@ describe('planner and routine loop', () => {
   });
 
   it('creates a due reminder and sees it on Today', () => {
-    cy.visit('/reminders');
+    cy.visit('/routines');
+    cy.get('[data-testid="reminder-open-modal"]').click();
     cy.get('[data-testid="reminder-title-input"]').type(reminderTitle);
     const past = new Date(Date.now() - 60_000);
     const pad = (n: number) => String(n).padStart(2, '0');
-    const local = `${past.getFullYear()}-${pad(past.getMonth() + 1)}-${pad(past.getDate())}T${pad(past.getHours())}:${pad(past.getMinutes())}`;
-    cy.get('[data-testid="reminder-datetime-input"]').type(local);
+    const local = `${past.getFullYear()}-${pad(past.getMonth() + 1)}-${pad(past.getDate())} ${pad(past.getHours())}:${pad(past.getMinutes())}`;
+    cy.get('[data-testid="reminder-datetime-input"]').clear();
+    cy.get('[data-testid="reminder-datetime-input"]').type(`${local}{enter}`);
     cy.get('[data-testid="reminder-submit"]').click();
-    cy.get('[data-testid="reminder-item"]').contains(reminderTitle);
 
     cy.visit('/');
     cy.get('[data-testid="today-item"][data-kind="reminder"]').contains(reminderTitle);
@@ -41,14 +43,14 @@ describe('planner and routine loop', () => {
     cy.get('[data-testid="session-save"]').click();
     cy.contains('sessão registrada');
 
-    cy.visit('/stats');
-    cy.get('[data-testid="stats-heatmap"]').should('be.visible');
-    cy.get('[data-testid="stats-streak"]').contains('1');
-    cy.get('[data-testid="stats-comparison"]').should('be.visible');
+    // stats live on Today since the desktop-shell redesign
+    cy.visit('/');
+    cy.get('[data-testid="year-heat"]').should('be.visible');
+    cy.contains('dia 1 de foco');
   });
 
   it('exports routines as .ics', () => {
-    cy.visit('/reminders');
+    cy.visit('/settings');
     cy.get('[data-testid="ics-export"]').click();
     cy.readFile('cypress/downloads/studyos.ics').should('contain', 'BEGIN:VCALENDAR');
   });

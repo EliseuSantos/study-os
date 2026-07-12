@@ -12,6 +12,7 @@ export interface SessionSliceRow {
   topic_id: string | null;
   questions_total: number | null;
   questions_correct: number | null;
+  type: string;
 }
 
 export interface ReviewSliceRow {
@@ -27,13 +28,14 @@ export interface PlannerTopicRow {
   title: string;
   status: TopicStatus;
   position: number;
+  updated_at: number;
   deps: string[];
 }
 
 /** Ended sessions started at/after fromMs (running sessions have no net time yet). */
 export async function sessionSlices(db: DbDriver, fromMs: number): Promise<SessionSliceRow[]> {
   const rows = await db.exec(
-    'SELECT started_at, net_seconds, track_id, topic_id, questions_total, questions_correct ' +
+    'SELECT started_at, net_seconds, track_id, topic_id, questions_total, questions_correct, type ' +
       'FROM sessions WHERE ended_at IS NOT NULL AND started_at >= ? AND deleted_at IS NULL ' +
       'ORDER BY started_at ASC, id ASC',
     [fromMs],
@@ -44,6 +46,7 @@ export async function sessionSlices(db: DbDriver, fromMs: number): Promise<Sessi
     track_id: (r['track_id'] ?? null) as string | null,
     topic_id: (r['topic_id'] ?? null) as string | null,
     questions_total: (r['questions_total'] ?? null) as number | null,
+    type: r['type'] as string,
     questions_correct: (r['questions_correct'] ?? null) as number | null,
   }));
 }
@@ -72,6 +75,7 @@ function rowToPlannerTopic(r: Row): PlannerTopicRow {
     title: r['title'] as string,
     status: r['status'] as TopicStatus,
     position: r['position'] as number,
+    updated_at: r['updated_at'] as number,
     deps: typeof deps === 'string' && deps !== '' ? deps.split(',') : [],
   };
 }
@@ -82,7 +86,7 @@ export async function plannerTopics(db: DbDriver, trackIds?: string[]): Promise<
   const trackFilter =
     trackIds === undefined ? '' : `AND t.track_id IN (${trackIds.map(() => '?').join(',')}) `;
   const rows = await db.exec(
-    'SELECT t.id, t.track_id, t.title, t.status, t.position, ' +
+    'SELECT t.id, t.track_id, t.title, t.status, t.position, t.updated_at, ' +
       'GROUP_CONCAT(d.depends_on_id) AS deps FROM topics t ' +
       'LEFT JOIN topic_deps d ON d.topic_id = t.id ' +
       `WHERE t.deleted_at IS NULL ${trackFilter}` +
@@ -90,4 +94,23 @@ export async function plannerTopics(db: DbDriver, trackIds?: string[]): Promise<
     trackIds ?? [],
   );
   return rows.map(rowToPlannerTopic);
+}
+
+export interface CardOriginStats {
+  created: number;
+  fromContent: number;
+}
+
+/** Cards created since fromMs and how many carry a source_ref (born from content). */
+export async function cardOriginStats(db: DbDriver, fromMs: number): Promise<CardOriginStats> {
+  const rows = await db.exec(
+    'SELECT COUNT(*) AS created, SUM(CASE WHEN source_ref IS NOT NULL THEN 1 ELSE 0 END) AS from_content ' +
+      'FROM cards WHERE created_at >= ? AND deleted_at IS NULL',
+    [fromMs],
+  );
+  const r = rows[0];
+  return {
+    created: (r?.['created'] ?? 0) as number,
+    fromContent: (r?.['from_content'] ?? 0) as number,
+  };
 }

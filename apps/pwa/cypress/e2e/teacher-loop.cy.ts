@@ -11,9 +11,12 @@ describe('teacher mode loop', () => {
     cy.get('[data-testid="track-title-input"]').type(trackTitle);
     cy.get('[data-testid="track-submit"]').click();
     cy.get('[data-testid="track-item"]').contains(trackTitle).click();
+    cy.get('[data-testid="topic-open-form"]').click();
     cy.get('[data-testid="topic-form"] [data-testid="topic-title-input"]').type(topicTitle);
     cy.get('[data-testid="topic-submit"]').click();
 
+    cy.get('[data-testid="topic-title"]').contains(topicTitle).click();
+    cy.get('[data-testid="stage-tabs"]').contains('aulas').click();
     cy.get('[data-testid="lesson-title-input"]').type(lessonTitle);
     cy.get('[data-testid="lesson-submit"]').click();
     cy.get('[data-testid="lesson-item-row"]').contains(lessonTitle).click();
@@ -40,6 +43,7 @@ describe('teacher mode loop', () => {
   it('presents the lesson with interactive quiz', () => {
     cy.visit('/tracks');
     cy.get('[data-testid="track-item"]').contains(trackTitle).click();
+    cy.get('[data-testid="stage-tabs"]').contains('aulas').click();
     cy.get('[data-testid="lesson-item-row"]').contains(lessonTitle).click();
     cy.get('[data-testid="present-link"]').click();
 
@@ -90,6 +94,7 @@ describe('teacher mode loop', () => {
       );
       cy.location('pathname').should('match', /^\/tracks\/.+/);
       cy.get('[data-testid="topic-title"]').contains(topicTitle);
+      cy.get('[data-testid="stage-tabs"]').contains('aulas').click();
       cy.get('[data-testid="lesson-item-row"]').contains(lessonTitle);
     });
   });

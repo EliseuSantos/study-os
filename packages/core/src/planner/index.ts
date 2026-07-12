@@ -317,7 +317,7 @@ export function buildToday(inputs: TodayInputs, now: number): TodayItem[] {
       kind: 'reminder',
       title: r.title,
       subtitle: 'lembrete',
-      href: '/reminders',
+      href: '/routines',
       sort: 100 + i,
     });
   });

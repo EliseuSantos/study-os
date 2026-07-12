@@ -4,6 +4,7 @@ import {
   getOrCreateDeviceId,
   listRoutines,
   listTracks,
+  updateRoutine,
 } from '@studyos/db';
 import type { RoutineRow, TrackRow } from '@studyos/shared';
 import { getDb } from '$lib/db/client';
@@ -34,6 +35,7 @@ export interface RoutinesStore {
   get routines(): RoutineRow[];
   get tracks(): TrackRow[];
   add(draft: RoutineDraft): Promise<void>;
+  update(id: string, draft: RoutineDraft): Promise<void>;
   remove(id: string): Promise<void>;
   destroy(): void;
 }
@@ -56,6 +58,21 @@ export function createRoutinesStore(): RoutinesStore {
       const db = await getDb();
       const deviceId = await getOrCreateDeviceId(db);
       await createRoutine(db, deviceId, {
+        title,
+        track_id: draft.track_id,
+        rrule: rruleFromDays(draft.days),
+        start_time: draft.start_time,
+        duration_min: duration,
+      });
+      await routinesLive.refresh();
+    },
+    async update(id: string, draft: RoutineDraft) {
+      const title = draft.title.trim();
+      const duration = Math.floor(draft.duration_min);
+      if (!title || draft.days.length === 0 || !draft.start_time || duration < 1) return;
+      const db = await getDb();
+      const deviceId = await getOrCreateDeviceId(db);
+      await updateRoutine(db, deviceId, id, {
         title,
         track_id: draft.track_id,
         rrule: rruleFromDays(draft.days),

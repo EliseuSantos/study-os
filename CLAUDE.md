@@ -57,8 +57,10 @@ bun x turbo typecheck lint test build        # full pipeline (same as CI)
 bun run validate:templates                   # snapshot templates against the format
 cd apps/worker && bun x wrangler d1 migrations apply studyos --local && bun run dev  # :8787
 cd apps/pwa && bun run dev                   # :5173, proxies /sync and /proxy to :8787
-cd apps/pwa && bun run build && bun x vite preview --port 4173   # e2e target
-cd apps/pwa && bun x cypress run --browser chromium              # e2e (Chromium only — OPFS)
+cd apps/worker && bun x wrangler d1 migrations apply studyos --local --persist-to /tmp/e2e-worker \
+  && bun x wrangler dev --port 8799 --persist-to /tmp/e2e-worker         # worker efêmero p/ e2e
+cd apps/pwa && bun run build && WORKER_ORIGIN=http://localhost:8799 bun x vite preview --port 4173
+cd apps/pwa && CYPRESS_WORKER=http://localhost:8799 bun x cypress run --browser chromium  # Chromium only — OPFS
 ```
 
 ## Hard rules

@@ -1,8 +1,15 @@
 import { decodeEntities } from './timedtext';
-import { MAX_RESULTS, isRecord, type Connector, type ContentResult, type FetchLike } from './types';
+import {
+  MAX_RESULTS,
+  isRecord,
+  rankByRelevance,
+  type Connector,
+  type ContentResult,
+  type FetchLike,
+} from './types';
 
 const SEARCH_URL =
-  'https://api.stackexchange.com/2.3/search/advanced?site=stackoverflow&order=desc&sort=relevance&q=';
+  'https://api.stackexchange.com/2.3/search/advanced?site=stackoverflow&order=desc&sort=relevance&answers=1&q=';
 
 export const stackexchangeConnector: Connector = {
   source: 'stackexchange',
@@ -38,7 +45,7 @@ export const stackexchangeConnector: Connector = {
           },
         });
       }
-      return results;
+      return rankByRelevance(q, results);
     } catch {
       return [];
     }

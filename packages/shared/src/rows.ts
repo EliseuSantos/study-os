@@ -93,6 +93,28 @@ export interface CardRow {
   front_md: string;
   back_md: string | null;
   options_json: string | null;
+  /** JSON CardSourceRef — where this card was born (reading, video, error log). */
+  source_ref: string | null;
+  created_at: number;
+  updated_at: number;
+  deleted_at: number | null;
+}
+
+/** Parsed shape of CardRow.source_ref. */
+export interface CardSourceRef {
+  content_item_id?: string;
+  url?: string;
+  /** video timestamp in seconds */
+  ts?: number;
+  kind?: 'reading' | 'video' | 'error';
+}
+
+export interface AnnotationRow {
+  id: string;
+  content_item_id: string;
+  kind: string; // 'highlight' (note_md optional on it)
+  anchor_json: string;
+  note_md: string | null;
   created_at: number;
   updated_at: number;
   deleted_at: number | null;

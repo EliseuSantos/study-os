@@ -21,6 +21,8 @@
 
   let title = $state('');
 
+  const doneCount = $derived(live.value.filter((i) => i.done === 1).length);
+
   onDestroy(() => live.destroy());
 
   async function add(event: SubmitEvent) {
@@ -50,12 +52,15 @@
 </script>
 
 <div data-testid="checklist">
+  {#if live.value.length > 0}
+    <p class="type-meta mb-1 text-right text-text-low tabular-nums" aria-live="polite">
+      {doneCount}/{live.value.length}
+    </p>
+  {/if}
   <ul>
-    {#each live.value as item (item.id)}
-      <li
-        data-testid="checklist-item"
-        class="flex items-center gap-3 border-b border-hairline py-2.5 first:border-t"
-      >
+    {#each live.value as item, i (item.id)}
+      <li data-testid="checklist-item" class="check-row {i === live.value.length - 1 ? 'check-row-last' : ''}">
+        <span class="check-rail" aria-hidden="true"></span>
         <button
           data-testid="checklist-toggle"
           type="button"
@@ -67,7 +72,11 @@
         >
           {#if item.done === 1}✓{/if}
         </button>
-        <span class="type-item flex-1 {item.done === 1 ? 'text-text-soft' : 'text-text-body'}">
+        <span
+          class="type-item flex-1 py-2 transition-colors duration-(--dur-base) ease-brand {item.done === 1
+            ? 'text-text-soft line-through decoration-hairline'
+            : 'text-text-body'}"
+        >
           {item.title}
         </span>
         <button
@@ -75,7 +84,7 @@
           type="button"
           aria-label="remover"
           onclick={() => void remove(item.id)}
-          class="type-meta h-6 w-6 shrink-0 cursor-pointer rounded-micro text-text-low transition-colors duration-(--dur-base) ease-brand hover:text-text-hi"
+          class="type-meta h-6 w-6 shrink-0 cursor-pointer self-center rounded-micro text-text-low opacity-0 transition-all duration-(--dur-base) ease-brand hover:text-text-hi"
         >
           ×
         </button>
@@ -104,22 +113,56 @@
 </div>
 
 <style>
+  /* Progress timeline: circles chained by a vertical rail (learnspring-style). */
+  .check-row {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 2px 0;
+  }
+  .check-row:hover > [data-testid='checklist-remove'] {
+    opacity: 1;
+  }
+  .check-rail {
+    position: absolute;
+    left: 10px;
+    top: 26px;
+    bottom: -6px;
+    width: 1.5px;
+    background: var(--hairline);
+  }
+  .check-row-last .check-rail {
+    display: none;
+  }
+
   /* The checklist check — "the only healthy dopamine moment", 160ms. */
   .check-box {
-    width: 20px;
-    height: 20px;
+    width: 21px;
+    height: 21px;
+    margin-top: 7px;
     flex-shrink: 0;
+    position: relative;
+    z-index: 1;
     cursor: pointer;
-    border-radius: var(--radius-micro);
-    border: 1px solid var(--border);
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
     color: var(--accent-ink);
-    font: 600 13px/1 var(--font-display);
+    font: 600 12px/1 var(--font-display);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     transition:
       background-color var(--dur-base) var(--ease),
-      border-color var(--dur-base) var(--ease);
+      border-color var(--dur-base) var(--ease),
+      transform var(--dur-base) var(--ease);
+  }
+  .check-box:hover {
+    border-color: var(--accent);
+  }
+  .check-box:active {
+    transform: scale(0.9);
   }
 
   .check-box-done {

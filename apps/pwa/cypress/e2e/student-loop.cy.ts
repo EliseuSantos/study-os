@@ -38,9 +38,16 @@ describe('student core loop', () => {
       .find('[data-testid="topic-status-toggle"]')
       .as('toggle');
     cy.get('@toggle').click();
-    cy.get('@toggle').should('have.attr', 'aria-label').and('include', 'estudando');
+    // the tree re-renders on status change — re-query, an alias would go stale
+    cy.get('[data-testid="topic-item"]')
+      .contains('Princípios fundamentais')
+      .closest('[data-testid="topic-item"]')
+      .find('[data-testid="topic-status-toggle"]')
+      .should('have.attr', 'aria-label')
+      .and('include', 'estudando');
 
     cy.get('[data-testid="topic-title"]').contains('Controle de constitucionalidade').click();
+    cy.get('[data-testid="card-form-toggle"]').click();
     cy.get('[data-testid="card-front-input"]').type(cardFront);
     cy.get('[data-testid="card-back-input"]').type(
       'exame da compatibilidade das normas com a constituição',
@@ -51,6 +58,9 @@ describe('student core loop', () => {
 
   it('reviews the new card from the Today queue', () => {
     cy.visit('/');
+    cy.get('[data-testid="today-queue"]')
+      .invoke('text')
+      .then((t) => cy.log(`FILA: ${t.slice(0, 400)}`));
     cy.get('[data-testid="today-queue"] [data-testid="today-item"]').contains(cardFront);
     cy.get('[data-testid="start-next"]').click();
 

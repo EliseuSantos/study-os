@@ -1,4 +1,5 @@
 <script lang="ts">
+  import NavIcon from '$lib/components/NavIcon.svelte';
   import { untrack } from 'svelte';
   import { createLesson, deleteLesson, getOrCreateDeviceId, listLessons } from '@studyos/db';
   import type { LessonRow } from '@studyos/shared';
@@ -52,25 +53,35 @@
   }
 </script>
 
-<section data-testid="lessons-panel" class="mt-12">
-  <h2 class="type-label text-text-low">
-    aulas{lessons.length > 0 ? ` · ${lessons.length}` : ''}
-  </h2>
+<section data-testid="lessons-panel">
+  <p class="type-meta text-text-low tabular-nums">
+    {lessons.length === 0
+      ? 'monte a primeira aula desta trilha'
+      : `${lessons.length} ${lessons.length === 1 ? 'aula' : 'aulas'} nesta trilha`}
+  </p>
 
-  <ul data-testid="lesson-list" role="list" class="mt-4">
-    {#each lessons as lesson (lesson.id)}
+  <ul data-testid="lesson-list" role="list" class="mt-2">
+    {#each lessons as lesson, i (lesson.id)}
       <li
         data-testid="lesson-item-row"
-        class="flex items-center gap-3 border-b border-hairline py-3 first:border-t"
+        class="group flex items-center gap-3 border-t border-hairline py-2.5 first:border-t-0"
       >
+        <span
+          class="grid h-6 w-6 shrink-0 place-items-center rounded-base border border-hairline text-[10.5px] font-semibold text-text-low tabular-nums"
+          aria-hidden="true"
+        >
+          {i + 1}
+        </span>
         <a
           href={`/tracks/${trackId}/lessons/${lesson.id}`}
-          class="type-item min-w-0 flex-1 truncate text-text-body transition-colors duration-(--dur-base) ease-brand hover:text-text-hi"
+          class="min-w-0 flex-1 truncate font-body text-[14px] font-medium text-text-body transition-colors duration-(--dur-base) ease-brand group-hover:text-text-hi"
         >
           {lesson.title}
         </a>
         {#if lesson.estimated_duration_min !== null}
-          <span class="type-meta shrink-0 text-text-low tabular-nums">
+          <span
+            class="type-meta shrink-0 rounded-chip border border-hairline px-2 py-0.5 text-text-low tabular-nums"
+          >
             ~{lesson.estimated_duration_min}min
           </span>
         {/if}
@@ -78,10 +89,11 @@
           data-testid="lesson-delete"
           type="button"
           aria-label={`excluir aula ${lesson.title}`}
+          title="excluir aula"
           onclick={() => void removeLesson(lesson.id)}
-          class="shrink-0 cursor-pointer leading-none text-text-low transition-colors duration-(--dur-base) ease-brand hover:text-text-hi"
+          class="icon-btn"
         >
-          ×
+          <NavIcon name="trash" size={13} />
         </button>
       </li>
     {/each}

@@ -65,6 +65,24 @@ export async function dueReminders(db: DbDriver, nowMs: number): Promise<Reminde
   return rows.map(rowToReminder);
 }
 
+export interface ReminderPatch {
+  title?: string;
+  notify_at?: number;
+}
+
+export async function updateReminder(
+  db: DbDriver,
+  deviceId: string,
+  id: string,
+  patch: ReminderPatch,
+): Promise<ReminderRow | null> {
+  const existing = await getReminder(db, id);
+  if (!existing || existing.deleted_at !== null) return null;
+  const updated = { ...existing, ...patch, updated_at: bumpedTs(existing.updated_at) };
+  await localWrite(db, 'reminders', updated, deviceId);
+  return updated;
+}
+
 export async function deleteReminder(db: DbDriver, deviceId: string, id: string): Promise<void> {
   const existing = await getReminder(db, id);
   if (!existing || existing.deleted_at !== null) return;

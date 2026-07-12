@@ -8,7 +8,6 @@
 
   let status = $state<'idle' | 'loading' | 'ready' | 'importing' | 'error'>('idle');
   let shared = $state<ShareGetResult | null>(null);
-  let importError = $state<string | null>(null);
 
   $effect(() => {
     const id = shareId;
@@ -29,21 +28,7 @@
     });
   });
 
-  async function confirmImport(): Promise<void> {
-    const id = shareId;
-    const data = shared;
-    if (id === null || data === null || status === 'importing') return;
-    status = 'importing';
-    try {
-      const trackId = await importAsTrack(data.snapshot, {
-        origin: `share:${id}`,
-        origin_version: data.hash,
-      });
-      await goto(`/tracks/${trackId}`);
-    } catch {
-      status = 'error';
-    }
-  }
+  let importError = $state<string | null>(null);
 
   async function onImportFile(event: Event): Promise<void> {
     const input = event.currentTarget as HTMLInputElement;
@@ -59,6 +44,22 @@
       input.value = '';
     }
   }
+
+  async function confirmImport(): Promise<void> {
+    const id = shareId;
+    const data = shared;
+    if (id === null || data === null || status === 'importing') return;
+    status = 'importing';
+    try {
+      const trackId = await importAsTrack(data.snapshot, {
+        origin: `share:${id}`,
+        origin_version: data.hash,
+      });
+      await goto(`/tracks/${trackId}`);
+    } catch {
+      status = 'error';
+    }
+  }
 </script>
 
 <svelte:head>
@@ -71,7 +72,8 @@
 
   {#if shareId === null || shareId === ''}
     <p class="type-item mt-6 text-text-soft">
-      abra um link de compartilhamento ou importe um arquivo .studyos.json exportado do StudyOS.
+      abra um link de trilha compartilhada (QR ou endereço) ou importe um arquivo
+      .studyos.json exportado do StudyOS.
     </p>
     <div class="mt-6">
       <label class="flex flex-col items-start gap-2">

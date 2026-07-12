@@ -35,8 +35,8 @@ export interface TrackDetailStore {
   get selectedTopicId(): string | null;
   selectTopic(id: string | null): void;
   addTopic(parentId: string | null, title: string): Promise<void>;
-  cycleStatus(topic: TopicRow): Promise<void>;
   importOutline(nodes: OutlineNodeInput[]): Promise<number>;
+  cycleStatus(topic: TopicRow): Promise<void>;
   addCard(front: string, back: string): Promise<void>;
   destroy(): void;
 }
@@ -89,17 +89,17 @@ export function createTrackDetailStore(trackId: string): TrackDetailStore {
       );
       await topicsLive.refresh();
     },
-    async cycleStatus(topic: TopicRow) {
-      await withDb((db, deviceId) =>
-        setTopicStatus(db, deviceId, topic.id, nextStatus(topic.status)),
-      );
-      await topicsLive.refresh();
-    },
     async importOutline(nodes: OutlineNodeInput[]) {
       if (nodes.length === 0) return 0;
       const count = await withDb((db, deviceId) => createTopicTree(db, deviceId, trackId, nodes));
       await topicsLive.refresh();
       return count;
+    },
+    async cycleStatus(topic: TopicRow) {
+      await withDb((db, deviceId) =>
+        setTopicStatus(db, deviceId, topic.id, nextStatus(topic.status)),
+      );
+      await topicsLive.refresh();
     },
     async addCard(front: string, back: string) {
       const topicId = selectedTopicId;

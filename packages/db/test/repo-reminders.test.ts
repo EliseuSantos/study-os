@@ -1,5 +1,11 @@
 import { expect, test } from 'bun:test';
-import { createReminder, deleteReminder, dueReminders, listReminders } from '../src/repo/reminders';
+import {
+  createReminder,
+  deleteReminder,
+  dueReminders,
+  listReminders,
+  updateReminder,
+} from '../src/repo/reminders';
 import { freshDb } from './load-migrations';
 
 const DEVICE = 'device-test';
@@ -54,4 +60,23 @@ test('deleteReminder soft-deletes and appends an oplog row', async () => {
   const row = await db.exec('SELECT deleted_at FROM reminders WHERE id = ?', [reminder.id]);
   expect(row[0]?.['deleted_at']).not.toBeNull();
   expect((await db.exec('SELECT * FROM oplog')).length).toBe(2);
+});
+
+test('updateReminder patches title/notify_at, bumps updated_at and writes oplog', async () => {
+  const db = await freshDb();
+  const created = await createReminder(db, DEVICE, { title: 'antes', notify_at: 1000 });
+
+  const updated = await updateReminder(db, DEVICE, created.id, {
+    title: 'depois',
+    notify_at: 2000,
+  });
+  expect(updated?.title).toBe('depois');
+  expect(updated?.notify_at).toBe(2000);
+  expect((updated?.updated_at ?? 0) > created.updated_at).toBe(true);
+
+  const ops = await db.exec("SELECT COUNT(*) AS n FROM oplog WHERE tbl = 'reminders'");
+  expect(ops[0]?.['n']).toBe(2);
+
+  await deleteReminder(db, DEVICE, created.id);
+  expect(await updateReminder(db, DEVICE, created.id, { title: 'x' })).toBeNull();
 });

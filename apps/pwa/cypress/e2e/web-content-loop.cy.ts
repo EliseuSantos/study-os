@@ -25,6 +25,7 @@ describe('web content loop', () => {
     cy.get('[data-testid="track-title-input"]').type(trackTitle);
     cy.get('[data-testid="track-submit"]').click();
     cy.get('[data-testid="track-item"]').contains(trackTitle).click();
+    cy.get('[data-testid="topic-open-form"]').click();
     cy.get('[data-testid="topic-form"] [data-testid="topic-title-input"]').type(topicTitle);
     cy.get('[data-testid="topic-submit"]').click();
     cy.get('[data-testid="topic-title"]').contains(topicTitle);
@@ -67,6 +68,7 @@ describe('web content loop', () => {
     cy.visit('/tracks');
     cy.get('[data-testid="track-item"]').contains(trackTitle).click();
     cy.get('[data-testid="topic-title"]').contains(topicTitle).click();
+    cy.get('[data-testid="stage-tabs"]').contains('conteúdo').click();
     cy.get('[data-testid="topic-content-list"] [data-testid="topic-content-item"]')
       .contains(articleTitle)
       .click();

@@ -4,6 +4,7 @@ import wasmUrl from '@journeyapps/wa-sqlite/dist/wa-sqlite.wasm?url';
 import { OPFSCoopSyncVFS } from '@journeyapps/wa-sqlite/src/examples/OPFSCoopSyncVFS.js';
 import initSql from '@studyos/db/migrations/0001_init.sql?raw';
 import proxyUsageSql from '@studyos/db/migrations/0002_proxy_usage.sql?raw';
+import annotationsSql from '@studyos/db/migrations/0003_annotations.sql?raw';
 import { migrate, type Row, type SqlValue, type Stmt } from '@studyos/db';
 import { DB_CHANNEL, DB_NAME } from '@studyos/shared';
 import type { DbBroadcast, DbReady, DbRequest, DbResponse } from './rpc';
@@ -78,6 +79,7 @@ async function init(): Promise<void> {
   await migrate({ exec, batch: runBatch }, [
     { version: 1, sql: initSql },
     { version: 2, sql: proxyUsageSql },
+    { version: 3, sql: annotationsSql },
   ]);
 }
 

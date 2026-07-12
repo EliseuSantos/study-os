@@ -7,9 +7,7 @@ sources (Wikipedia, Stack Exchange) run client-side; key-holding or scraping sou
 (YouTube, Firecrawl web) go through the Worker's bearer-auth'd proxy, cached via the
 Cache API seam (`apps/worker/src/cache.ts`) and — for Firecrawl — budgeted against the
 free plan in D1.
-
 ## Requirements
-
 ### Requirement: Connector interface
 
 Every connector SHALL be fetch-injectable, return at most 10 `ContentResult`s and
@@ -90,6 +88,24 @@ Routing SHALL be: youtube → `/library/watch/<external_id>`; web →
 
 - **WHEN** a web result is attached to a topic and clicked from the topic panel
 - **THEN** it opens in the in-app reader with the scraped markdown rendered
+
+### Requirement: Seleção de texto com ações no conteúdo renderizado
+
+O leitor de artigos e a transcrição do player SHALL exibir, ao selecionar texto,
+um popover de ações (testid `selection-actions`) com: destacar, nota e criar
+card. O popover posiciona-se acima da seleção (abaixo, em touch), fecha em Esc
+ou clique fora, e oferece atalhos `h` (destacar) e `c` (criar card).
+
+#### Scenario: popover aparece na seleção
+
+- **WHEN** o usuário seleciona texto dentro do artigo renderizado
+- **THEN** o popover aparece junto à seleção com as três ações e navegação por
+  teclado
+
+#### Scenario: sem seleção, sem popover
+
+- **WHEN** a seleção é vazia ou está fora do corpo do conteúdo
+- **THEN** nenhum popover aparece
 
 ## Notes
 

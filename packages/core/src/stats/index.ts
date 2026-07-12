@@ -14,6 +14,8 @@ export interface SessionSlice {
   topic_id: string | null;
   questions_total: number | null;
   questions_correct: number | null;
+  /** session type (theory|questions|review|reading); optional for older callers */
+  type?: string;
 }
 
 export interface ReviewSlice {

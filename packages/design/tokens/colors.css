@@ -18,7 +18,7 @@
   --text-note: #C7C0B4;         /* notes prose */
   --text-mid: #B2AA9E;          /* secondary */
   --text-soft: #9A9285;         /* de-emphasized items */
-  --text-low: #7B756A;          /* metadata, labels */
+  --text-low: #918A7D;          /* metadata, labels · AA 4.8:1 on surface */
 
   --accent: #E9A94F;            /* âmbar · oklch(.80 .13 78) — the one accent */
   --accent-ink: #2B1F09;        /* text on accent */
@@ -77,7 +77,7 @@
   --text-note: #48433B;
   --text-mid: #5C564C;
   --text-soft: #6E6659;
-  --text-low: #8A8175;
+  --text-low: #6F6759; /* AA 5.6:1 on white, 4.7:1 on surface-2 */
 
   --accent: #C98A2E;            /* darkened to hold AA on light */
   --accent-ink: #FFF7EA;

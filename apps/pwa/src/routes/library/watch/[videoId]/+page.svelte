@@ -1,7 +1,22 @@
 <script lang="ts">
   import { page } from '$app/state';
+  import { onDestroy, untrack } from 'svelte';
   import { parseTimedText, type TranscriptCue } from '@studyos/connectors';
+  import { makeAnchor, resolveAnchor } from '@studyos/core';
+  import { findContentByExternalId } from '@studyos/db';
+  import type { ContentItemRow } from '@studyos/shared';
+  import { getDb } from '$lib/db/client';
   import { authedFetch } from '$lib/stores/library.svelte';
+  import {
+    createAnnotationsStore,
+    type AnnotationsStore,
+    type ParsedAnnotation,
+  } from '$lib/stores/annotations.svelte';
+  import { showToast } from '$lib/stores/toast.svelte';
+  import CardFromSelection from '$lib/components/CardFromSelection.svelte';
+  import SelectionActions, {
+    type SelectionInfo,
+  } from '$lib/components/SelectionActions.svelte';
 
   const EMBED_ORIGIN = 'https://www.youtube-nocookie.com';
   const VIDEO_ID_RE = /^[A-Za-z0-9_-]{5,20}$/;
@@ -108,13 +123,81 @@
     const s = Math.floor(sec % 60);
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   }
+
+  // ---- annotations over transcript cues (only when the video is saved) ----
+  let contentItem = $state<ContentItemRow | null>(null);
+  let store = $state.raw<AnnotationsStore | null>(null);
+  let transcriptEl = $state<HTMLElement | null>(null);
+  let cardModal = $state<SelectionInfo | null>(null);
+
+  $effect(() => {
+    const id = videoId;
+    if (!VIDEO_ID_RE.test(id)) return;
+    void getDb()
+      .then((db) => findContentByExternalId(db, 'youtube', id))
+      .then((item) => {
+        contentItem = item;
+        untrack(() => {
+          store?.destroy();
+          store = item === null ? null : createAnnotationsStore(item.id);
+        });
+      })
+      .catch(() => {});
+  });
+
+  onDestroy(() => store?.destroy());
+
+  const annotations = $derived(store?.items ?? []);
+
+  interface Run {
+    text: string;
+    ann: ParsedAnnotation | null;
+  }
+  const runsBySeg = $derived.by(() => {
+    const map = new Map<number, Run[]>();
+    for (const a of annotations) {
+      const seg = a.anchor.segment_index ?? -1;
+      const text = cues[seg]?.text;
+      if (text === undefined) continue;
+      const r = resolveAnchor(text, a.anchor);
+      if (r === null) continue;
+      // v1: one highlight per cue; a second one on the same cue is ignored
+      if (!map.has(seg)) {
+        map.set(seg, [
+          { text: text.slice(0, r.start), ann: null },
+          { text: text.slice(r.start, r.end), ann: a },
+          { text: text.slice(r.end), ann: null },
+        ]);
+      }
+    }
+    return map;
+  });
+
+  function requireSaved(): boolean {
+    if (contentItem !== null) return true;
+    showToast('salve este vídeo num tópico (biblioteca → salvar) para anotar', 'info');
+    return false;
+  }
+
+  async function doHighlight(sel: SelectionInfo): Promise<void> {
+    if (!requireSaved() || store === null) return;
+    const text = cues[sel.segIndex]?.text ?? '';
+    const anchor = makeAnchor(text, sel.start, sel.end, sel.segIndex);
+    if (anchor === null) return;
+    await store.add(anchor);
+  }
+
+  function openCard(sel: SelectionInfo): void {
+    if (!requireSaved()) return;
+    cardModal = sel;
+  }
 </script>
 
 <svelte:head>
   <title>StudyOS — vídeo</title>
 </svelte:head>
 
-<section class="mx-auto w-full max-w-2xl px-4 py-8">
+<section class="mx-auto w-full max-w-[900px] px-4 py-6 lg:px-8 lg:py-7">
   <a
     href="/library"
     class="type-meta text-text-low transition-colors duration-(--dur-base) ease-brand hover:text-text-hi"
@@ -150,7 +233,7 @@
       </button>
     </div>
 
-    <div data-testid="transcript-panel" class="mt-3 max-h-96 overflow-y-auto">
+    <div data-testid="transcript-panel" bind:this={transcriptEl} class="mt-3 max-h-96 overflow-y-auto">
       {#if transcriptState === 'loading'}
         <p class="type-item text-text-soft" aria-live="polite">carregando transcrição…</p>
       {:else if transcriptState === 'missing'}
@@ -158,20 +241,28 @@
       {:else}
         <ul role="list">
           {#each cues as cue, i (i)}
-            <li>
+            <li
+              bind:this={cueEls[i]}
+              class="flex gap-3 rounded-micro px-2 py-1.5 {i === activeIndex ? 'cue-active' : ''}"
+            >
               <button
                 data-testid="transcript-cue"
-                bind:this={cueEls[i]}
                 type="button"
                 onclick={() => seek(cue.start)}
-                class="flex w-full cursor-pointer gap-3 rounded-micro px-2 py-1.5 text-left transition-colors duration-(--dur-base) ease-brand hover:bg-surface {i ===
-                activeIndex
-                  ? 'cue-active'
-                  : ''}"
+                title="ir para {fmt(cue.start)}"
+                class="type-meta shrink-0 cursor-pointer text-text-low transition-colors duration-(--dur-base) ease-brand hover:text-accent"
               >
-                <span class="type-meta shrink-0 text-text-low">[{fmt(cue.start)}]</span>
-                <span class="type-item font-body text-text-body">{cue.text}</span>
+                [{fmt(cue.start)}]
               </button>
+              <span data-seg={i} class="type-item font-body text-text-body select-text">
+                {#if runsBySeg.has(i)}
+                  {#each runsBySeg.get(i) ?? [] as run, k (k)}
+                    {#if run.ann !== null}
+                      <mark data-annotation-id={run.ann.id} class="hl">{run.text}</mark>
+                    {:else}{run.text}{/if}
+                  {/each}
+                {:else}{cue.text}{/if}
+              </span>
             </li>
           {/each}
         </ul>
@@ -180,8 +271,35 @@
   {/if}
 </section>
 
+<SelectionActions
+  container={transcriptEl}
+  onHighlight={(sel) => void doHighlight(sel)}
+  onNote={(sel) => void doHighlight(sel)}
+  onCard={openCard}
+/>
+
+{#if cardModal !== null && contentItem !== null}
+  <CardFromSelection
+    quote={cardModal.quote}
+    source={{
+      content_item_id: contentItem.id,
+      url: contentItem.url ?? `https://www.youtube.com/watch?v=${videoId}`,
+      ts: cues[cardModal.segIndex]?.start ?? 0,
+      kind: 'video',
+    }}
+    topicId={contentItem.topic_id}
+    onClose={() => (cardModal = null)}
+  />
+{/if}
+
 <style>
   .cue-active {
     background: var(--accent-tint-10);
+  }
+  :global(mark.hl) {
+    background: var(--accent-tint-12);
+    color: inherit;
+    border-radius: 2px;
+    box-shadow: 0 1px 0 var(--accent-dim);
   }
 </style>

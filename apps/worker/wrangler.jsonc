@@ -6,8 +6,20 @@
   "assets": {
     "directory": "../pwa/build",
     "binding": "ASSETS",
-    "not_found_handling": "single-page-application",
-    "run_worker_first": ["/sync/*", "/health"],
+    "not_found_handling": "none",
+    "run_worker_first": [
+      "/sync/*",
+      "/push/*",
+      "/proxy/*",
+      "/share",
+      "/share/*",
+      "/health",
+      "/import",
+      "/library/read",
+      "/tracks/*",
+      "/library/watch/*",
+      "/present/*",
+    ],
   },
   "r2_buckets": [
     {

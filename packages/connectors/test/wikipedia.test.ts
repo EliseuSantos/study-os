@@ -17,7 +17,7 @@ function rejectingFetch(message: string): FetchLike {
 function searchItem(i: number): Record<string, unknown> {
   return {
     ns: 0,
-    title: `Resultado ${i}`,
+    title: `Fotossíntese — resultado ${i}`,
     pageid: 1000 + i,
     size: 4321,
     wordcount: 100 + i,
@@ -35,22 +35,24 @@ test('wikipedia maps search results and caps at 10', async () => {
       search: Array.from({ length: 12 }, (_, i) => searchItem(i)),
     },
   });
+  const emptyTitle = stubJson({ pages: [] });
   const fetchFn: FetchLike = (url, init) => {
     requested.push(url);
-    return fixture(url, init);
+    return url.includes('/rest.php/v1/search/title') ? emptyTitle(url, init) : fixture(url, init);
   };
 
   const results = await wikipediaConnector.search('fotossíntese clorofila', fetchFn);
 
-  expect(requested).toEqual([
+  expect(requested.toSorted()).toEqual([
     'https://pt.wikipedia.org/w/api.php?action=query&list=search&format=json&origin=*&srsearch=fotoss%C3%ADntese%20clorofila',
+    'https://pt.wikipedia.org/w/rest.php/v1/search/title?limit=5&q=fotossintese',
   ]);
   expect(results.length).toBe(10);
   expect(results[0]).toEqual({
     source: 'wikipedia',
     external_id: '1000',
-    url: 'https://pt.wikipedia.org/wiki/Resultado_0',
-    title: 'Resultado 0',
+    url: 'https://pt.wikipedia.org/wiki/Fotoss%C3%ADntese_%E2%80%94_resultado_0',
+    title: 'Fotossíntese — resultado 0',
     kind: 'article',
     description: 'trecho resultado 0',
     meta: { snippet: 'trecho <span class="searchmatch">resultado</span> 0', wordcount: 100 },
@@ -94,4 +96,31 @@ test('wikipedia returns [] on unexpected json shape', async () => {
 
 test('wikipedia returns [] when fetch throws', async () => {
   expect(await wikipediaConnector.search('x', rejectingFetch('network down'))).toEqual([]);
+});
+
+test('title-search hits lead the merge and dedupe against full-text', async () => {
+  const titleFixture = stubJson({
+    pages: [
+      { id: 1, title: 'Verbo', description: 'classe de palavras' },
+      { id: 2, title: 'Verbo de ligação', description: null },
+    ],
+  });
+  const textFixture = stubJson({
+    query: {
+      search: [
+        // duplicate of the title hit — must not repeat
+        { pageid: 1, title: 'Verbo', snippet: 'o <b>verbo</b> to be', wordcount: 10 },
+        { pageid: 3, title: 'E-Prime', snippet: 'sem usar o verbo ser, to be', wordcount: 10 },
+        // never mentions the anchor — the guard drops it
+        { pageid: 4, title: 'Nodemon', snippet: 'restarting due to changes', wordcount: 10 },
+      ],
+    },
+  });
+  const fetchFn: FetchLike = (url, init) =>
+    url.includes('/rest.php/v1/search/title') ? titleFixture(url, init) : textFixture(url, init);
+
+  const results = await wikipediaConnector.search('verbo to-be', fetchFn);
+
+  expect(results.map((r) => r.title)).toEqual(['Verbo', 'Verbo de ligação', 'E-Prime']);
+  expect(results[0]?.description).toBe('classe de palavras');
 });

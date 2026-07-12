@@ -8,6 +8,8 @@ export interface CreateCardInput {
   kind?: string;
   front_md: string;
   back_md?: string | null;
+  /** JSON CardSourceRef (see @studyos/shared) — origin of the card. */
+  source_ref?: string | null;
 }
 
 function rowToCard(r: Row): CardRow {
@@ -18,6 +20,7 @@ function rowToCard(r: Row): CardRow {
     front_md: r['front_md'] as string,
     back_md: (r['back_md'] ?? null) as string | null,
     options_json: (r['options_json'] ?? null) as string | null,
+    source_ref: (r['source_ref'] ?? null) as string | null,
     created_at: r['created_at'] as number,
     updated_at: r['updated_at'] as number,
     deleted_at: (r['deleted_at'] ?? null) as number | null,
@@ -37,6 +40,7 @@ export async function createCard(
     front_md: input.front_md,
     back_md: input.back_md ?? null,
     options_json: null,
+    source_ref: input.source_ref ?? null,
     created_at: ts,
     updated_at: ts,
     deleted_at: null,

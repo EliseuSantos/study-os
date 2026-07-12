@@ -7,21 +7,8 @@ describe('library and content loop', () => {
   const videoTitle = `Aula de controle difuso ${stamp}`;
 
   function stubSources(): void {
-    cy.intercept('GET', 'https://pt.wikipedia.org/w/api.php*', {
-      body: {
-        query: {
-          search: [
-            {
-              pageid: 101,
-              title: 'Controle de constitucionalidade',
-              snippet: 'exame',
-              wordcount: 900,
-            },
-          ],
-        },
-      },
-    }).as('wiki');
-    cy.intercept('GET', 'https://api.stackexchange.com/**', { body: { items: [] } }).as('se');
+    // firecrawl-first: search goes only through the worker proxies (web + youtube)
+    cy.intercept('GET', '/proxy/firecrawl/search*', { body: { items: [] } }).as('web');
     cy.intercept('GET', '/proxy/youtube/search*', {
       body: {
         items: [
@@ -42,6 +29,7 @@ describe('library and content loop', () => {
     cy.get('[data-testid="track-title-input"]').type(trackTitle);
     cy.get('[data-testid="track-submit"]').click();
     cy.get('[data-testid="track-item"]').contains(trackTitle).click();
+    cy.get('[data-testid="topic-open-form"]').click();
     cy.get('[data-testid="topic-form"] [data-testid="topic-title-input"]').type(topicTitle);
     cy.get('[data-testid="topic-submit"]').click();
     cy.get('[data-testid="topic-title"]').contains(topicTitle);
@@ -52,7 +40,7 @@ describe('library and content loop', () => {
     cy.visit('/library');
     cy.get('[data-testid="library-search-input"]').type('controle difuso');
     cy.get('[data-testid="library-search-submit"]').click();
-    cy.wait(['@wiki', '@yt']);
+    cy.wait('@yt');
 
     cy.get('[data-testid="library-result"]').contains(videoTitle);
     cy.get('[data-testid="library-result"]')
@@ -70,6 +58,7 @@ describe('library and content loop', () => {
     cy.visit('/tracks');
     cy.get('[data-testid="track-item"]').contains(trackTitle).click();
     cy.get('[data-testid="topic-title"]').contains(topicTitle).click();
+    cy.get('[data-testid="stage-tabs"]').contains('conteúdo').click();
     cy.get('[data-testid="topic-content-list"] [data-testid="topic-content-item"]')
       .contains(videoTitle)
       .should('have.attr', 'href')
@@ -82,22 +71,19 @@ describe('library and content loop', () => {
     cy.visit('/library/watch/dQw4w9WgXcQ');
     cy.wait('@transcript');
     cy.get('[data-testid="video-player"]').should('be.visible');
-    cy.get('[data-testid="transcript-cue"]')
-      .should('have.length', 2)
-      .first()
-      .contains('primeira fala');
+    // the cue text lives beside the timestamp button since the redesign
+    cy.get('[data-testid="transcript-cue"]').should('have.length', 2);
+    cy.get('[data-testid="transcript-panel"]').contains('primeira fala');
   });
 
   it('finds the topic and the content via global search', () => {
     cy.visit('/');
-    cy.get('[data-testid="global-search-input"]').type('Controle difuso');
-    cy.get('[data-testid="global-search-results"] [data-testid="global-search-result"]').contains(
-      topicTitle,
-    );
-    cy.get('[data-testid="global-search-input"]').clear();
-    cy.get('[data-testid="global-search-input"]').type('Aula de controle');
-    cy.get('[data-testid="global-search-results"] [data-testid="global-search-result"]').contains(
-      videoTitle,
-    );
+    // global search moved into the ⌘K palette in the desktop-shell redesign
+    cy.get('body').type('{ctrl}k');
+    cy.get('[data-testid="command-palette-input"]').type('Controle difuso');
+    cy.get('[data-testid="palette-row"]').contains(topicTitle);
+    cy.get('[data-testid="command-palette-input"]').clear();
+    cy.get('[data-testid="command-palette-input"]').type('Aula de controle');
+    cy.get('[data-testid="palette-row"]').contains(videoTitle);
   });
 });

@@ -12,6 +12,8 @@ Types live in `packages/shared/src/sync-types.ts` — the frozen contract for cl
 - Body: `PushRequest { device_id, ops: OpLogEntry[] }`
 - Server behavior, per op, all in one atomic `D1.batch()`:
   1. Validate `tbl` against `SYNCED_TABLES` (unknown tables rejected with 400).
+     Since M8 the set includes `annotations` (reading highlights/notes) and
+     `cards` carries the nullable `source_ref` column (origin of the card).
   2. LWW upsert payload into the entity table: apply iff `incoming.updated_at > existing.updated_at`.
   3. Upsert into `server_oplog` (latest op per `(tbl, row_id)`), same LWW guard.
 - Response: `PushResponse { accepted }` (200). 401 on bad token.
@@ -58,3 +60,9 @@ Route `/` (Today placeholder in M1):
   `data-testid="goal-submit"`
 - `data-testid="goal-list"` — list of `data-testid="goal-item"` entries showing the title
 - `data-testid="sync-now"` — manual sync button
+
+> Limitação conhecida: o cursor de pull é `max(updated_at)` do `server_oplog`.
+> Um cliente com relógio adiantado (ou dados gravados com timestamp futuro)
+> avança o cursor além do presente e atrasa a entrega de ops novos até o
+> relógio alcançá-lo. Endurecer isso pede um `seq` monotônico do servidor —
+> candidato a um change futuro do sync-protocol.

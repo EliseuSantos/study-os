@@ -193,6 +193,7 @@ export async function importSnapshot(
       front_md: c.front_md,
       back_md: c.back_md,
       options_json: c.options_json,
+      source_ref: null,
       created_at: ts,
       updated_at: ts,
       deleted_at: null,

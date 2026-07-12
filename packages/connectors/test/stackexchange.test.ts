@@ -25,7 +25,7 @@ function questionItem(i: number): Record<string, unknown> {
     creation_date: 1700000000 + i,
     question_id: 5000 + i,
     link: `https://stackoverflow.com/questions/${5000 + i}/some-question-${i}`,
-    title: `Question ${i}`,
+    title: `Question ${i} — async await usage`,
   };
 }
 
@@ -45,7 +45,7 @@ test('stackexchange maps results, decodes html entities in titles and caps at 10
   const results = await stackexchangeConnector.search('async await', fetchFn);
 
   expect(requested).toEqual([
-    'https://api.stackexchange.com/2.3/search/advanced?site=stackoverflow&order=desc&sort=relevance&q=async%20await',
+    'https://api.stackexchange.com/2.3/search/advanced?site=stackoverflow&order=desc&sort=relevance&answers=1&q=async%20await',
   ]);
   expect(results.length).toBe(10);
   expect(results[0]).toEqual({

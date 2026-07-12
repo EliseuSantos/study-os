@@ -6,7 +6,14 @@ import {
   periodComparison,
   weakTopics,
 } from '@studyos/core';
-import { listTracks, plannerTopics, reviewSlices, sessionSlices, type DbDriver } from '@studyos/db';
+import {
+  cardOriginStats,
+  listTracks,
+  plannerTopics,
+  reviewSlices,
+  sessionSlices,
+  type DbDriver,
+} from '@studyos/db';
 import { liveQuery } from '$lib/db/live.svelte';
 
 export interface HeatCell {
@@ -18,17 +25,55 @@ export interface HeatCell {
 export interface StatsRow {
   key: string;
   label: string;
+  pct: number | null; // 0..100 for the row bar; null hides it
+}
+
+export interface TrendPoint {
+  day: number;
+  minutes: number;
+}
+
+export interface MixSlice {
+  label: string;
+  minutes: number;
 }
 
 export interface StatsData {
   heatmap: HeatCell[]; // 84 days, column-major: week columns, dom..sáb rows
   streak: number;
-  comparison: string;
+  weekLabel: string;
+  lastWeekLabel: string;
+  deltaPct: number | null;
+  retentionPct: number | null;
+  totalMin84: number;
+  trend28: TrendPoint[];
+  typeMix: MixSlice[];
   accuracy: StatsRow[];
   weak: StatsRow[];
+  cardOrigin: { created: number; fromContent: number };
 }
 
-const EMPTY: StatsData = { heatmap: [], streak: 0, comparison: '', accuracy: [], weak: [] };
+const EMPTY: StatsData = {
+  heatmap: [],
+  streak: 0,
+  weekLabel: '0min',
+  lastWeekLabel: '0min',
+  deltaPct: null,
+  retentionPct: null,
+  totalMin84: 0,
+  trend28: [],
+  typeMix: [],
+  accuracy: [],
+  cardOrigin: { created: 0, fromContent: 0 },
+  weak: [],
+};
+
+const TYPE_LABEL: Record<string, string> = {
+  theory: 'teoria',
+  questions: 'questões',
+  review: 'revisão',
+  reading: 'leitura',
+};
 
 /** '130' minutes -> '2h10', '240' -> '4h', '45' -> '45min'. */
 function formatMinutes(totalMin: number): string {
@@ -72,21 +117,15 @@ function buildHeatmap(
   });
 }
 
-function comparisonLabel(cmp: { thisWeek: number; lastWeek: number; deltaPct: number | null }) {
-  const base = `esta semana ${formatSeconds(cmp.thisWeek)} · semana passada ${formatSeconds(cmp.lastWeek)}`;
-  if (cmp.deltaPct === null) return base;
-  const rounded = Math.round(cmp.deltaPct);
-  return `${base} · ${rounded >= 0 ? '+' : ''}${rounded}%`;
-}
-
 async function loadStats(db: DbDriver): Promise<StatsData> {
   const now = Date.now();
   const from = now - 84 * DAY_MS;
-  const [sessions, reviews, tracks, topics] = await Promise.all([
+  const [sessions, reviews, tracks, topics, cardOrigin] = await Promise.all([
     sessionSlices(db, from),
     reviewSlices(db, from),
     listTracks(db),
     plannerTopics(db),
+    cardOriginStats(db, now - 28 * DAY_MS),
   ]);
 
   const todayMidnight = new Date(now).setHours(0, 0, 0, 0);
@@ -100,27 +139,56 @@ async function loadStats(db: DbDriver): Promise<StatsData> {
     if (row.track_id === null && row.total === 0) continue;
     const title = (row.track_id !== null && trackTitles.get(row.track_id)) || 'sem trilha';
     if (row.pct === null) {
-      accuracy.push({ key: row.track_id ?? 'null', label: `${title} · sem questões` });
+      accuracy.push({ key: row.track_id ?? 'null', label: `${title} · sem questões`, pct: null });
     } else {
       accuracy.push({
         key: row.track_id ?? 'null',
         label: `${title} · ${Math.round(row.pct)}% · ${row.total} ${row.total === 1 ? 'questão' : 'questões'}`,
+        pct: Math.round(row.pct),
       });
     }
   }
 
   const topicTitles = new Map(topics.map((t) => [t.id, t.title]));
+  const weakRaw = weakTopics(reviews, sessions);
+  const maxScore = Math.max(...weakRaw.map((w) => w.score), 0.001);
   const weak: StatsRow[] = [];
-  for (const w of weakTopics(reviews, sessions)) {
+  for (const w of weakRaw) {
     const title = topicTitles.get(w.topic_id);
     if (title === undefined) continue; // deleted topic
-    weak.push({ key: w.topic_id, label: `${title} · atenção` });
+    weak.push({ key: w.topic_id, label: title, pct: Math.round((w.score / maxScore) * 100) });
   }
 
+  const trendStart = todayMidnight - 27 * DAY_MS;
+  const trend28: TrendPoint[] = netSecondsPerDay(sessions, trendStart, todayMidnight).map((d) => ({
+    day: d.day,
+    minutes: Math.round(d.seconds / 60),
+  }));
+
+  const mixTotals = new Map<string, number>();
+  for (const session of sessions) {
+    const label = TYPE_LABEL[session.type ?? ''] ?? 'outros';
+    mixTotals.set(label, (mixTotals.get(label) ?? 0) + session.net_seconds);
+  }
+  const typeMix: MixSlice[] = ['teoria', 'questões', 'revisão', 'leitura']
+    .map((label) => ({ label, minutes: Math.round((mixTotals.get(label) ?? 0) / 60) }))
+    .filter((slice) => slice.minutes >= 0);
+
+  const graded = reviews.length;
+  const good = reviews.filter((r) => r.rating >= 3).length;
+  const cmp = periodComparison(sessions, now);
+
   return {
+    cardOrigin,
     heatmap: buildHeatmap(perDay, todayMidnight),
     streak: currentStreak(perDay, now),
-    comparison: comparisonLabel(periodComparison(sessions, now)),
+    weekLabel: formatSeconds(cmp.thisWeek),
+    lastWeekLabel: formatSeconds(cmp.lastWeek),
+    deltaPct: cmp.deltaPct === null ? null : Math.round(cmp.deltaPct),
+    retentionPct: graded === 0 ? null : Math.round((good / graded) * 100),
+    totalMin84: Math.round(sessions.reduce((n, s) => n + s.net_seconds, 0) / 60),
+    trend28,
+    typeMix,
     accuracy,
     weak,
   };

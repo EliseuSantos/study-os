@@ -12,7 +12,7 @@ import {
   type SchedulerCardState,
   type SchedulerState,
 } from '@studyos/core';
-import type { FsrsStateRow } from '@studyos/shared';
+import type { CardSourceRef, FsrsStateRow } from '@studyos/shared';
 import { getDb } from '$lib/db/client';
 
 export type { Rating };
@@ -21,8 +21,10 @@ export interface ReviewStore {
   get loading(): boolean;
   get current(): DueReview | null;
   get remaining(): number;
+  get done(): number;
   get revealed(): boolean;
   get back(): string | null;
+  get source(): CardSourceRef | null;
   load(): Promise<void>;
   reveal(): void;
   rate(rating: Rating): Promise<void>;
@@ -50,6 +52,7 @@ export function createReviewStore(): ReviewStore {
   let loading = $state(true);
   let revealed = $state(false);
   let back = $state<string | null>(null);
+  let source = $state<CardSourceRef | null>(null);
   let shownAt = 0;
   let rating = false;
   let backToken = 0;
@@ -57,11 +60,20 @@ export function createReviewStore(): ReviewStore {
   async function loadBack(): Promise<void> {
     const token = ++backToken;
     back = null;
+    source = null;
     const item = items[index];
     if (!item || item.refKind !== 'card') return;
     const db = await getDb();
     const card = await getCard(db, item.refId);
-    if (token === backToken) back = card?.back_md ?? null;
+    if (token !== backToken) return;
+    back = card?.back_md ?? null;
+    if (card?.source_ref != null) {
+      try {
+        source = JSON.parse(card.source_ref) as CardSourceRef;
+      } catch {
+        source = null;
+      }
+    }
   }
 
   return {
@@ -74,11 +86,17 @@ export function createReviewStore(): ReviewStore {
     get remaining() {
       return Math.max(0, items.length - index);
     },
+    get done() {
+      return Math.min(index, items.length);
+    },
     get revealed() {
       return revealed;
     },
     get back() {
       return back;
+    },
+    get source() {
+      return source;
     },
     async load() {
       const db = await getDb();

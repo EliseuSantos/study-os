@@ -1,6 +1,6 @@
 // Exercises the browser → worker sync loop. Requires `wrangler dev` on :8787 and a
 // baseUrl whose /sync is proxied to it (vite dev). Self-skips when the backend is down.
-const WORKER = 'http://localhost:8787';
+const WORKER = Cypress.env('WORKER') ?? 'http://localhost:8787';
 const AUTH = { authorization: 'Bearer dev-token' };
 
 describe('sync loop', () => {
@@ -21,23 +21,40 @@ describe('sync loop', () => {
 
   it('pushes a locally created goal to the worker', () => {
     const title = `push-e2e-${Date.now()}`;
-    cy.visit('/');
+    cy.visit('/settings');
+    cy.get('[data-testid="settings-sync-token"]').type('dev-token');
+    cy.get('[data-testid="settings-sync-token-save"]').click();
+
+    cy.visit('/goals');
+    cy.get('[data-testid="goal-open-modal"]').click();
     cy.get('[data-testid="goal-title-input"]').type(title);
     cy.get('[data-testid="goal-submit"]').click();
     cy.get('[data-testid="goal-item"]').contains(title);
-    cy.get('[data-testid="sync-now"]').click();
+    cy.visit('/settings');
+    cy.get('[data-testid="settings-sync-now"]').click();
 
-    cy.request({
-      url: `${WORKER}/sync/pull?since=0&device=cypress-probe`,
-      headers: AUTH,
-    }).then((res) => {
-      const payloads = (res.body.ops as { payload: string }[]).map((o) => o.payload);
-      expect(payloads.some((p) => p.includes(title))).to.equal(true);
-    });
+    // the goal may reach the worker via this click or the debounced auto-sync —
+    // poll the server until it lands instead of pinning down which push carried it
+    function probe(attempt: number): void {
+      cy.request({
+        url: `${WORKER}/sync/pull?since=0&device=cypress-probe`,
+        headers: AUTH,
+      }).then((res) => {
+        const payloads = (res.body.ops as { payload: string }[]).map((o) => o.payload);
+        if (payloads.some((p) => p.includes(title))) return;
+        if (attempt >= 20) throw new Error('goal never reached the worker');
+        cy.wait(500);
+        probe(attempt + 1);
+      });
+    }
+    probe(0);
   });
 
   it('pulls a remotely pushed goal into the app', () => {
     const title = `pull-e2e-${Date.now()}`;
+    cy.visit('/settings');
+    cy.get('[data-testid="settings-sync-token"]').type('dev-token');
+    cy.get('[data-testid="settings-sync-token-save"]').click();
     const ts = Date.now();
     const row = {
       id: `goal-${ts}`,
@@ -68,8 +85,12 @@ describe('sync loop', () => {
       },
     });
 
-    cy.visit('/');
-    cy.get('[data-testid="sync-now"]').click();
-    cy.get('[data-testid="goal-item"]', { timeout: 10000 }).contains(title);
+    cy.visit('/settings');
+    cy.intercept('GET', '/sync/pull*').as('pull');
+    cy.get('[data-testid="settings-sync-now"]').click();
+    cy.wait('@pull');
+
+    cy.visit('/goals');
+    cy.get('[data-testid="goal-item"]', { timeout: 10_000 }).contains(title);
   });
 });

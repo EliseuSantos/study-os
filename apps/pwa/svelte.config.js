@@ -5,7 +5,9 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 const config = {
   preprocess: vitePreprocess(),
   kit: {
-    adapter: adapter({ fallback: 'index.html' }),
+    // prerendered pages are real files; 200.html is the SPA fallback the
+    // worker serves for dynamic-param routes (see wrangler.jsonc)
+    adapter: adapter({ fallback: '200.html' }),
   },
 };
 

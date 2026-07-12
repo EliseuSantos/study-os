@@ -77,6 +77,7 @@ async function runSync(): Promise<void> {
     failures += 1;
     nextAllowedAt = Date.now() + Math.min(BACKOFF_BASE_MS * 2 ** (failures - 1), BACKOFF_MAX_MS);
     syncState.status = 'error';
+    if (import.meta.env.DEV) console.error('[sync] fail', error);
     throw error;
   }
 }

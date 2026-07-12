@@ -31,17 +31,6 @@ export async function buildTrackSnapshot(trackId: string): Promise<TrackSnapshot
   return buildSnapshot(data);
 }
 
-/** Trigger a browser download of the snapshot as `<slug>.studyos.json`. */
-export function downloadSnapshot(snapshot: TrackSnapshot): void {
-  const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${slugify(snapshot.track.title)}.studyos.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 /** POST /share (bearer) → `{ id, hash }`. Throws on any failure. */
 export async function publishSnapshot(snapshot: TrackSnapshot): Promise<ShareCreateResult> {
   const res = await authedFetch('/share', {
@@ -72,6 +61,16 @@ export async function fetchShare(id: string): Promise<ShareGetResult | null> {
 }
 
 /** Materialize a snapshot as a new local track; returns the new track id. */
+export function downloadSnapshot(snapshot: TrackSnapshot): void {
+  const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${slugify(snapshot.track.title)}.studyos.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export async function importAsTrack(
   snapshot: TrackSnapshot,
   origin: { origin: string; origin_version: string },
@@ -81,11 +80,7 @@ export async function importAsTrack(
   return importSnapshot(db, deviceId, snapshot, origin);
 }
 
-/**
- * File-import flow shared by TrackActions and /import: parse the file text
- * (throws Error('invalid snapshot: …') on bad input) and import with origin
- * 'file'. Returns the new track id.
- */
+/** Import a .studyos.json file's content as a new local track. */
 export async function importSnapshotFile(json: string): Promise<string> {
   const snapshot = parseSnapshot(json);
   return importAsTrack(snapshot, { origin: 'file', origin_version: snapshotHash(snapshot) });

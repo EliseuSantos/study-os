@@ -11,11 +11,15 @@ import { SETTINGS_KEYS, type TopicRow, type TrackRow } from '@studyos/shared';
 import { getDb } from '$lib/db/client';
 import { liveQuery } from '$lib/db/live.svelte';
 
-export const SOURCES = ['wikipedia', 'stackexchange', 'youtube', 'web'] as const;
+// Search goes only through the worker proxies (budgeted + cached): firecrawl
+// for the web, youtube for video. No direct third-party APIs from the client.
+export const SOURCES = ['web', 'youtube'] as const;
 export type Source = (typeof SOURCES)[number];
 export type SourceFilter = 'all' | Source;
 
-export const SOURCE_LABELS: Record<Source, string> = {
+// wikipedia/stackexchange linger only as labels for content attached before
+// the firecrawl-first change.
+export const SOURCE_LABELS: Record<string, string> = {
   wikipedia: 'wikipédia',
   stackexchange: 'stack exchange',
   youtube: 'youtube',
@@ -49,8 +53,6 @@ export interface SourceGroup {
   source: Source;
   results: ContentResult[];
 }
-
-const plainFetch: FetchLike = (url, init) => fetch(url, init);
 
 async function loadTopics(trackId: string): Promise<TopicRow[]> {
   const db = await getDb();
@@ -127,8 +129,7 @@ export function createLibraryStore(): LibraryStore {
       enabled.map((source) => {
         const connector = getConnector(source);
         if (connector === null) return Promise.resolve<ContentResult[]>([]);
-        const fetchFn =
-          source === 'youtube' ? youtubeFetch : source === 'web' ? webFetch : plainFetch;
+        const fetchFn = source === 'youtube' ? youtubeFetch : webFetch;
         return connector.search(query, fetchFn);
       }),
     );

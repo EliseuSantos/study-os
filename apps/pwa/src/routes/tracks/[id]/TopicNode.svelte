@@ -3,6 +3,7 @@
   // oxlint-disable-next-line import/no-self-import -- recursive component; svelte:self is deprecated in runes mode
   import TopicNode from './TopicNode.svelte';
   import TopicForm from './TopicForm.svelte';
+  import NavIcon from '$lib/components/NavIcon.svelte';
   import type { TopicNodeData, TreeActions } from './tree';
 
   let {
@@ -33,9 +34,9 @@
 <li>
   <div
     data-testid="topic-item"
-    class="topic-row flex items-center gap-2 border-b border-hairline py-2 pr-1"
+    class="topic-row flex items-center gap-1.5 rounded-base py-1.5 pr-1"
     class:topic-row-selected={isSelected}
-    style="padding-left: {node.depth * 20}px"
+    style="padding-left: {node.depth * 18}px"
   >
     {#if node.children.length > 0}
       <button
@@ -83,15 +84,16 @@
       type="button"
       data-testid="topic-add-child"
       aria-label="adicionar subtópico em {topic.title}"
-      class="type-meta shrink-0 cursor-pointer rounded-micro border border-border px-2 py-1 text-text-low transition-colors duration-(--dur-base) ease-brand hover:text-text-mid"
+      title="adicionar subtópico"
+      class="add-child icon-btn h-6 w-6"
       onclick={() => actions.openChildForm(topic.id)}
     >
-      + subtópico
+      <NavIcon name="plus" size={12} />
     </button>
   </div>
 
   {#if openFormId === topic.id}
-    <div class="border-b border-hairline py-3" style="padding-left: {(node.depth + 1) * 20}px">
+    <div class="py-3" style="padding-left: {(node.depth + 1) * 18}px">
       <TopicForm
         label="novo subtópico"
         focusOnOpen
@@ -111,9 +113,25 @@
 </li>
 
 <style>
-  .topic-row-selected {
+  .topic-row {
+    transition: background-color var(--dur-base) var(--ease);
+  }
+  .topic-row:hover {
+    background: var(--surface-2);
+  }
+  .topic-row-selected,
+  .topic-row-selected:hover {
     background: var(--accent-tint-09);
     box-shadow: inset 3px 0 0 var(--accent);
+  }
+
+  /* quiet until the row is hovered or the button is focused */
+  .add-child {
+    opacity: 0;
+  }
+  .topic-row:hover .add-child,
+  .add-child:focus-visible {
+    opacity: 1;
   }
 
   .dot {

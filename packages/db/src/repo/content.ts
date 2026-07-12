@@ -58,6 +58,28 @@ export async function getContent(db: DbDriver, id: string): Promise<ContentItemR
   return r ? rowToContentItem(r) : null;
 }
 
+export async function findContentByUrl(db: DbDriver, url: string): Promise<ContentItemRow | null> {
+  const rows = await db.exec(
+    'SELECT * FROM content_items WHERE url = ? AND deleted_at IS NULL LIMIT 1',
+    [url],
+  );
+  const r = rows[0];
+  return r ? rowToContentItem(r) : null;
+}
+
+export async function findContentByExternalId(
+  db: DbDriver,
+  source: string,
+  externalId: string,
+): Promise<ContentItemRow | null> {
+  const rows = await db.exec(
+    'SELECT * FROM content_items WHERE source = ? AND external_id = ? AND deleted_at IS NULL LIMIT 1',
+    [source, externalId],
+  );
+  const r = rows[0];
+  return r ? rowToContentItem(r) : null;
+}
+
 export async function listContentByTopic(db: DbDriver, topicId: string): Promise<ContentItemRow[]> {
   const rows = await db.exec(
     'SELECT * FROM content_items WHERE topic_id = ? AND deleted_at IS NULL ' +

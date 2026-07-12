@@ -231,7 +231,7 @@ describe('buildToday', () => {
       },
       now,
     );
-    expect(items.map((i) => i.href)).toEqual(['/review', '/reminders', '/study']);
+    expect(items.map((i) => i.href)).toEqual(['/review', '/routines', '/study']);
     expect(items.map((i) => i.subtitle)).toEqual(['revisão', 'lembrete', '2h de estudo']);
   });
 

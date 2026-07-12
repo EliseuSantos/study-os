@@ -5,6 +5,7 @@ import { youtubeConnector } from './youtube';
 import { webConnector } from './web';
 
 export type { Connector, ContentKind, ContentResult, FetchLike, TranscriptCue } from './types';
+export { rankByRelevance, titleTermScore } from './types';
 export { parseTimedText, decodeEntities } from './timedtext';
 export { wikipediaConnector } from './wikipedia';
 export { stackexchangeConnector } from './stackexchange';

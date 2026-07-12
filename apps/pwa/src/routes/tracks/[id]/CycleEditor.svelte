@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SelectSearch from '$lib/components/SelectSearch.svelte';
   import { onDestroy } from 'svelte';
   import { getOrCreateDeviceId, listCycleSlots, setCycleSlots } from '@studyos/db';
   import type { TopicRow } from '@studyos/shared';
@@ -91,8 +92,7 @@
   }
 </script>
 
-<section data-testid="cycle-editor" class="mt-12">
-  <h2 class="type-label text-text-low">ciclo</h2>
+<section data-testid="cycle-editor">
   <p class="type-meta mt-2 text-text-soft">peso maior · aparece mais vezes no ciclo</p>
 
   {#if !loaded}
@@ -141,17 +141,15 @@
 
     <form class="mt-4 flex gap-2" onsubmit={onadd}>
       <label class="sr-only" for="cycle-add-topic">adicionar tópico ao ciclo</label>
-      <select
-        id="cycle-add-topic"
-        data-testid="cycle-add-select"
-        bind:value={addTopicId}
-        class="type-item h-(--h-button-md) min-w-0 flex-1 cursor-pointer rounded-base border border-border bg-surface px-3 text-text-body"
-      >
-        <option value="">escolha um tópico</option>
-        {#each available as topic (topic.id)}
-          <option value={topic.id}>{topic.title}</option>
-        {/each}
-      </select>
+      <div class="min-w-0 flex-1">
+        <SelectSearch
+          options={available.map((t) => ({ value: t.id, label: t.title }))}
+          bind:value={addTopicId}
+          testid="cycle-add-select"
+          ariaLabel="tópico para o ciclo"
+          placeholder="escolha um tópico"
+        />
+      </div>
       <button
         data-testid="cycle-add-submit"
         type="submit"

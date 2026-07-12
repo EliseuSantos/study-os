@@ -83,6 +83,7 @@
   onDestroy(() => {
     if (blurTimer !== null) clearTimeout(blurTimer);
   });
+
 </script>
 
 <div class="relative">
@@ -96,14 +97,14 @@
     aria-controls="global-search-results"
     aria-autocomplete="list"
     aria-activedescendant={activeIndex >= 0 ? `global-search-option-${activeIndex}` : undefined}
-    placeholder="buscar"
+    placeholder="buscar · ⌘K"
     autocomplete="off"
     value={store.query}
     {oninput}
     {onkeydown}
     {onblur}
     {onfocus}
-    class="type-meta h-8 w-36 rounded-micro border border-border bg-surface px-3 text-text-body placeholder:text-text-low"
+    class="type-meta h-8 w-44 rounded-micro border border-border bg-surface px-3 text-text-body placeholder:text-text-low"
   />
 
   {#if store.open}
