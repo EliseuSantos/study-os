@@ -9,6 +9,16 @@
   import { downloadProgressImage, type HeatLevel } from '$lib/stats/progress-image';
   import MixBar from '$lib/components/charts/MixBar.svelte';
   import Ring from '$lib/components/charts/Ring.svelte';
+  import WhyNote from '$lib/components/WhyNote.svelte';
+  import { FORECAST_SUGGEST_THRESHOLD } from '@studyos/core';
+  import {
+    createReminder,
+    dueByDay,
+    getOrCreateDeviceId,
+    getSetting,
+    setSettingStmt,
+  } from '@studyos/db';
+  import { showToast } from '$lib/stores/toast.svelte';
   import NavIcon from '$lib/components/NavIcon.svelte';
   import TrendChart from '$lib/components/charts/TrendChart.svelte';
   import { createProfileStore } from '$lib/stores/profile.svelte';
@@ -18,6 +28,47 @@
   const profile = createProfileStore();
   const stats = createStatsStore();
   let generating = $state(false);
+
+  // review-load forecast: suggest (never impose) an extra block when tomorrow
+  // will flood the queue; dismissal is per-day and local-only
+  let tomorrowLoad = $state(0);
+  let forecastDismissed = $state(true);
+  $effect(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dismissKey = `forecast_dismissed_${today.toISOString().slice(0, 10)}`;
+    void getDb()
+      .then(async (db) => {
+        const [counts, dismissed] = await Promise.all([
+          dueByDay(db, today.getTime(), 2),
+          getSetting(db, dismissKey),
+        ]);
+        tomorrowLoad = counts[1] ?? 0;
+        forecastDismissed = dismissed !== null;
+      })
+      .catch(() => {});
+  });
+
+  async function acceptForecast(): Promise<void> {
+    const db = await getDb();
+    const deviceId = await getOrCreateDeviceId(db);
+    const tomorrow = new Date();
+    tomorrow.setHours(9, 0, 0, 0);
+    await createReminder(db, deviceId, {
+      title: 'bloco extra de revisão · 30min',
+      notify_at: tomorrow.getTime() + 86_400_000,
+    });
+    await dismissForecast();
+    showToast('bloco extra marcado para amanhã', 'success');
+  }
+
+  async function dismissForecast(): Promise<void> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const db = await getDb();
+    await db.batch([setSettingStmt(`forecast_dismissed_${today.toISOString().slice(0, 10)}`, '1')]);
+    forecastDismissed = true;
+  }
 
   const dash = $derived(today.dashboard);
   const reviewCount = $derived(today.items.filter((i) => i.kind === 'review').length);
@@ -475,6 +526,36 @@
         {/if}
       </div>
 
+      {#if !forecastDismissed && tomorrowLoad > FORECAST_SUGGEST_THRESHOLD}
+        <div
+          data-testid="forecast-suggestion"
+          class="mb-3 flex flex-wrap items-center gap-3 rounded-base border border-hairline bg-surface-2 px-3.5 py-2.5"
+        >
+          <p class="type-item min-w-0 flex-1 text-text-soft tabular-nums">
+            amanhã chegam ≈ {tomorrowLoad} revisões — quer reservar 30min a mais?
+          </p>
+          <button
+            data-testid="forecast-accept"
+            type="button"
+            onclick={() => void acceptForecast()}
+            class="type-meta cursor-pointer rounded-base bg-accent px-3 py-1.5 font-semibold text-accent-ink transition-opacity duration-(--dur-base) ease-brand hover:opacity-90"
+          >
+            reservar
+          </button>
+          <button
+            data-testid="forecast-dismiss"
+            type="button"
+            onclick={() => void dismissForecast()}
+            class="type-meta cursor-pointer text-text-mid transition-colors duration-(--dur-base) ease-brand hover:text-text-hi"
+          >
+            hoje não
+          </button>
+        </div>
+      {/if}
+      <WhyNote
+        flag="queue"
+        text="a fila junta o que vence hoje: revisões primeiro, depois os blocos do plano — terminar a fila é terminar o dia."
+      />
       {#if today.items.length === 0}
         <div class="m-4 rounded-base border border-hairline px-4 py-6 text-center lg:m-5">
           <p data-testid="today-empty" class="type-item text-text-soft">

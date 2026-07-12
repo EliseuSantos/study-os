@@ -84,15 +84,15 @@ describe('accuracyByTrack', () => {
       session({ track_id: null, questions_total: 4, questions_correct: 1 }),
     ];
     expect(accuracyByTrack(sessions)).toEqual([
-      { track_id: 'a', total: 20, correct: 15, pct: 75 },
-      { track_id: 'b', total: 0, correct: 0, pct: null },
-      { track_id: null, total: 4, correct: 1, pct: 25 },
+      { track_id: 'a', total: 20, correct: 15, pct: 75, measured: false },
+      { track_id: 'b', total: 0, correct: 0, pct: null, measured: false },
+      { track_id: null, total: 4, correct: 1, pct: 25, measured: false },
     ]);
   });
 
   test('questions_total of 0 does not count', () => {
     expect(accuracyByTrack([session({ track_id: 'a', questions_total: 0 })])).toEqual([
-      { track_id: 'a', total: 0, correct: 0, pct: null },
+      { track_id: 'a', total: 0, correct: 0, pct: null, measured: false },
     ]);
   });
 });
@@ -163,5 +163,46 @@ describe('weakTopics', () => {
 
   test('empty input yields empty output', () => {
     expect(weakTopics([], [])).toEqual([]);
+  });
+});
+
+describe('weakTopics with card reviews (M9)', () => {
+  test('card reviews aggregate into their resolved topic', () => {
+    const now = 1_700_000_000_000;
+    const reviews = [1, 1, 2].map((rating, i) => ({
+      reviewed_at: now - i * 1000,
+      rating,
+      ref_id: `card-${i}`,
+      ref_kind: 'card',
+      topic_id: 'topic-weak',
+    }));
+    const out = weakTopics(reviews, []);
+    expect(out.map((w) => w.topic_id)).toEqual(['topic-weak']);
+  });
+
+  test('card review without resolved topic is ignored', () => {
+    const now = 1_700_000_000_000;
+    const reviews = [1, 1, 1].map((_, i) => ({
+      reviewed_at: now,
+      rating: 1,
+      ref_id: `card-${i}`,
+      ref_kind: 'card',
+      topic_id: null,
+    }));
+    expect(weakTopics(reviews, [])).toEqual([]);
+  });
+});
+
+
+describe('accuracyByTrack measured precedence (M9)', () => {
+  test('quiz sessions replace self-reported numbers for the track', () => {
+    const sessions = [
+      session({ track_id: 'a', questions_total: 10, questions_correct: 2 }),
+      session({ track_id: 'a', questions_total: 5, questions_correct: 4, notes: 'quiz' }),
+      session({ track_id: 'a', questions_total: 8, questions_correct: 1 }),
+    ];
+    expect(accuracyByTrack(sessions)).toEqual([
+      { track_id: 'a', total: 5, correct: 4, pct: 80, measured: true },
+    ]);
   });
 });

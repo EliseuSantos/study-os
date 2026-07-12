@@ -3,6 +3,8 @@ export interface GoalRow {
   title: string;
   description: string | null;
   target_date: number | null;
+  /** exam mode: a dated goal linked to a track drives its retention ramp */
+  track_id: string | null;
   status: string;
   created_at: number;
   updated_at: number;

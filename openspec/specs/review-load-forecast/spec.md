@@ -1,5 +1,8 @@
-## ADDED Requirements
+# review-load-forecast Specification
 
+## Purpose
+TBD - created by archiving change orquestracao-e-orientacao. Update Purpose after archive.
+## Requirements
 ### Requirement: Projeção de carga de revisões
 
 O sistema SHALL projetar a carga de revisões por dia (`forecastReviewLoad`:
@@ -17,18 +20,21 @@ carga de amanhã quando maior que zero.
 
 Quando a carga projetada de um dia exceder o limiar (30 cards), o Hoje SHALL
 sugerir — nunca impor — um bloco extra de revisão: uma linha dispensável
-("amanhã chegam ≈ 40 revisões — quer reservar 30min a mais?") com ação de criar
-o bloco na agenda e ação de dispensar; o tom segue o princípio anti-culpa.
+("amanhã chegam ≈ 40 revisões — quer reservar 30min a mais?") com ação de
+reservar (cria um lembrete-bloco "bloco extra de revisão · 30min" amanhã, que
+aparece na agenda e na fila) e ação de dispensar (por dia, local); o tom segue
+o princípio anti-culpa.
 
 #### Scenario: sugerir e aceitar
 
 - **WHEN** a projeção de amanhã é 40 e o usuário aceita a sugestão (testid
   `forecast-accept`)
-- **THEN** um bloco de revisão de 30min é criado na agenda de amanhã e a
-  sugestão some
+- **THEN** um lembrete-bloco de revisão (30min) é criado para amanhã — visível
+  na agenda e na fila de amanhã — e a sugestão some
 
 #### Scenario: dispensar sem culpa
 
 - **WHEN** o usuário dispensa (testid `forecast-dismiss`)
 - **THEN** a sugestão não reaparece para aquele dia e nada é registrado contra
   o usuário
+

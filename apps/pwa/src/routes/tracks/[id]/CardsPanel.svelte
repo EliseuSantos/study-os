@@ -1,16 +1,22 @@
 <script lang="ts">
   import type { CardRow, TopicRow } from '@studyos/shared';
   import NavIcon from '$lib/components/NavIcon.svelte';
+  import TopicQuiz from './TopicQuiz.svelte';
 
   let {
     topic,
     cards,
+    trackId,
     onadd,
   }: {
     topic: TopicRow;
     cards: CardRow[];
+    trackId: string;
     onadd: (front: string, back: string) => Promise<void>;
   } = $props();
+
+  const quizCards = $derived(cards.filter((c) => c.kind === 'quiz'));
+  let quizOpen = $state(false);
 
   let front = $state('');
   let back = $state('');
@@ -34,6 +40,16 @@
       ? `nenhum card em ${topic.title}`
       : `${cards.length} ${cards.length === 1 ? 'card' : 'cards'} neste tópico`}
   </p>
+  {#if quizCards.length > 0}
+    <button
+      data-testid="topic-quiz-start"
+      type="button"
+      onclick={() => (quizOpen = true)}
+      class="type-meta cursor-pointer rounded-base border border-border px-2.5 py-1 text-text-mid transition-colors duration-(--dur-base) ease-brand hover:text-text-hi"
+    >
+      praticar · {quizCards.length}
+    </button>
+  {/if}
   <button
     data-testid="card-form-toggle"
     type="button"
@@ -111,4 +127,8 @@
       criar primeiro card
     </button>
   </div>
+{/if}
+
+{#if quizOpen}
+  <TopicQuiz cards={quizCards} {trackId} topicId={topic.id} onClose={() => (quizOpen = false)} />
 {/if}

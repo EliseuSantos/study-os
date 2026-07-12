@@ -5,10 +5,15 @@
   import { dbState } from '$lib/stores/db-state.svelte';
   import { showToast } from '$lib/stores/toast.svelte';
   import NavIcon from '$lib/components/NavIcon.svelte';
+  import SelectSearch, { type SelectOption } from '$lib/components/SelectSearch.svelte';
+  import { listTracks } from '@studyos/db';
+  import { getDb } from '$lib/db/client';
 
   const store = createGoalsStore();
   let title = $state('');
   let targetDate = $state('');
+  let goalTrack = $state('');
+  let trackOptions = $state<SelectOption[]>([]);
   let modalOpen = $state(false);
 
   const writable = $derived(dbState.status === 'ready');
@@ -20,7 +25,17 @@
   function openModal() {
     title = '';
     targetDate = '';
+    goalTrack = '';
     modalOpen = true;
+    void getDb()
+      .then((db) => listTracks(db))
+      .then((tracks) => {
+        trackOptions = [
+          { value: '', label: 'sem trilha' },
+          ...tracks.map((t) => ({ value: t.id, label: t.title })),
+        ];
+      })
+      .catch(() => {});
   }
 
   function closeModal() {
@@ -36,9 +51,10 @@
     if (!writable || title.trim() === '') return;
     const value = title;
     const at = targetDate === '' ? null : new Date(`${targetDate}T12:00:00`).getTime();
+    const trackId = goalTrack === '' ? null : goalTrack;
     title = '';
     targetDate = '';
-    void store.add(value, at);
+    void store.add(value, at, trackId);
     closeModal();
     showToast('objetivo criado', 'success');
   }
@@ -196,6 +212,19 @@
           disabled={!writable}
           class="type-item mt-2 h-(--h-button-md) w-full rounded-base border border-border bg-surface px-3 text-text-body disabled:opacity-50"
         />
+        <p class="type-label mt-3 block text-text-low">trilha · opcional</p>
+        <div class="mt-2">
+          <SelectSearch
+            options={trackOptions}
+            bind:value={goalTrack}
+            testid="goal-track-select"
+            ariaLabel="trilha do objetivo"
+            placeholder="sem trilha"
+          />
+        </div>
+        <p class="type-meta mt-1.5 text-text-low">
+          objetivo com data e trilha vira modo reta final: as revisões apertam perto da prova.
+        </p>
         <button
           data-testid="goal-submit"
           type="submit"

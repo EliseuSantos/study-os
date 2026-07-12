@@ -13,6 +13,7 @@ export interface SessionSliceRow {
   questions_total: number | null;
   questions_correct: number | null;
   type: string;
+  notes: string | null;
 }
 
 export interface ReviewSliceRow {
@@ -20,6 +21,8 @@ export interface ReviewSliceRow {
   rating: number;
   ref_id: string;
   ref_kind: string;
+  /** resolved topic: ref_id for topic reviews, cards.topic_id for card reviews */
+  topic_id: string | null;
 }
 
 export interface PlannerTopicRow {
@@ -35,7 +38,7 @@ export interface PlannerTopicRow {
 /** Ended sessions started at/after fromMs (running sessions have no net time yet). */
 export async function sessionSlices(db: DbDriver, fromMs: number): Promise<SessionSliceRow[]> {
   const rows = await db.exec(
-    'SELECT started_at, net_seconds, track_id, topic_id, questions_total, questions_correct, type ' +
+    'SELECT started_at, net_seconds, track_id, topic_id, questions_total, questions_correct, type, notes ' +
       'FROM sessions WHERE ended_at IS NOT NULL AND started_at >= ? AND deleted_at IS NULL ' +
       'ORDER BY started_at ASC, id ASC',
     [fromMs],
@@ -48,14 +51,21 @@ export async function sessionSlices(db: DbDriver, fromMs: number): Promise<Sessi
     questions_total: (r['questions_total'] ?? null) as number | null,
     type: r['type'] as string,
     questions_correct: (r['questions_correct'] ?? null) as number | null,
+    notes: (r['notes'] ?? null) as string | null,
   }));
 }
 
 /** Review log entries at/after fromMs, joined to fsrs_state for the ref. */
 export async function reviewSlices(db: DbDriver, fromMs: number): Promise<ReviewSliceRow[]> {
+  // card reviews resolve to their topic so weak-topic insights work with real
+  // usage (reviewing cards), not only direct topic reviews
   const rows = await db.exec(
-    'SELECT rl.reviewed_at, rl.rating, f.ref_id, f.ref_kind FROM review_logs rl ' +
-      'JOIN fsrs_state f ON f.id = rl.fsrs_id WHERE rl.reviewed_at >= ? ' +
+    'SELECT rl.reviewed_at, rl.rating, f.ref_id, f.ref_kind, ' +
+      "CASE WHEN f.ref_kind = 'topic' THEN f.ref_id ELSE c.topic_id END AS topic_id " +
+      'FROM review_logs rl ' +
+      'JOIN fsrs_state f ON f.id = rl.fsrs_id ' +
+      "LEFT JOIN cards c ON f.ref_kind = 'card' AND c.id = f.ref_id " +
+      'WHERE rl.reviewed_at >= ? ' +
       'ORDER BY rl.reviewed_at ASC, rl.id ASC',
     [fromMs],
   );
@@ -64,6 +74,7 @@ export async function reviewSlices(db: DbDriver, fromMs: number): Promise<Review
     rating: r['rating'] as number,
     ref_id: r['ref_id'] as string,
     ref_kind: r['ref_kind'] as string,
+    topic_id: (r['topic_id'] ?? null) as string | null,
   }));
 }
 

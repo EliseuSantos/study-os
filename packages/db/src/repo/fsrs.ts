@@ -1,4 +1,4 @@
-import { newId, now, type FsrsStateRow } from '@studyos/shared';
+import { newId, now, type CardRow, type FsrsStateRow } from '@studyos/shared';
 import type { DbDriver, Row, Stmt } from '../driver';
 import { localWriteStmts } from './oplog';
 import { bumpedTs } from './ts';
@@ -132,7 +132,7 @@ export async function listDueReviews(
     const newRows = await db.exec(
       'SELECT c.id, c.front_md, c.created_at FROM cards c ' +
         "LEFT JOIN fsrs_state f ON f.ref_kind = 'card' AND f.ref_id = c.id " +
-        'WHERE f.id IS NULL AND c.deleted_at IS NULL ' +
+        'WHERE (f.id IS NULL OR (f.reps = 0 AND f.due_at IS NULL)) AND c.deleted_at IS NULL ' +
         'ORDER BY c.created_at ASC, c.id ASC LIMIT ?',
       [limit - out.length],
     );
@@ -145,6 +145,90 @@ export async function listDueReviews(
         fsrs: null,
       });
     }
+  }
+  return out;
+}
+
+/**
+ * Undo the most recent review of a ref: restore the given prior scheduler
+ * state (snapshot taken before rating) and drop the newest review_log row.
+ * `prior === null` (first review undone) rewrites the row as a pristine
+ * "new" state KEEPING its id — deleting it locally would leave the server
+ * copy alive and the next review's fresh id would violate the server's
+ * UNIQUE(ref_kind, ref_id). The queue treats reps=0/due null as never
+ * reviewed.
+ */
+export async function undoLastReview(
+  db: DbDriver,
+  deviceId: string,
+  refKind: RefKind,
+  refId: string,
+  prior: FsrsStateRow | null,
+): Promise<void> {
+  const current = await getFsrsState(db, refKind, refId);
+  if (!current) return;
+  const dropLog: Stmt = {
+    sql:
+      'DELETE FROM review_logs WHERE id = (SELECT id FROM review_logs WHERE fsrs_id = ? ' +
+      'ORDER BY reviewed_at DESC, id DESC LIMIT 1)',
+    params: [current.id],
+  };
+  if (prior === null) {
+    const pristine = {
+      ...current,
+      state: 'new',
+      stability: 0,
+      difficulty: 0,
+      due_at: null,
+      last_review: null,
+      reps: 0,
+      lapses: 0,
+      updated_at: bumpedTs(current.updated_at),
+    } satisfies FsrsStateRow;
+    await db.batch([...localWriteStmts('fsrs_state', pristine, deviceId), dropLog]);
+    return;
+  }
+  const restored = { ...prior, id: current.id, updated_at: bumpedTs(current.updated_at) };
+  await db.batch([...localWriteStmts('fsrs_state', restored, deviceId), dropLog]);
+}
+
+/** Quiz cards of a topic (kind='quiz', not deleted), position order. */
+export async function listQuizCards(db: DbDriver, topicId: string): Promise<CardRow[]> {
+  const rows = await db.exec(
+    "SELECT * FROM cards WHERE topic_id = ? AND kind = 'quiz' AND deleted_at IS NULL " +
+      'ORDER BY created_at ASC, id ASC',
+    [topicId],
+  );
+  return rows.map((r) => ({
+    id: r['id'] as string,
+    topic_id: r['topic_id'] as string,
+    kind: r['kind'] as string,
+    front_md: r['front_md'] as string,
+    back_md: (r['back_md'] ?? null) as string | null,
+    options_json: (r['options_json'] ?? null) as string | null,
+    source_ref: (r['source_ref'] ?? null) as string | null,
+    created_at: r['created_at'] as number,
+    updated_at: r['updated_at'] as number,
+    deleted_at: (r['deleted_at'] ?? null) as number | null,
+  }));
+}
+
+/** Due refs per day-bucket for the forecast (start..start+horizon days). */
+export async function dueByDay(
+  db: DbDriver,
+  startMidnight: number,
+  horizonDays: number,
+): Promise<number[]> {
+  const end = startMidnight + horizonDays * 86_400_000;
+  const rows = await db.exec(
+    'SELECT CAST((due_at - ?) / 86400000 AS INTEGER) AS day, COUNT(*) AS n FROM fsrs_state ' +
+      'WHERE due_at IS NOT NULL AND due_at >= ? AND due_at < ? GROUP BY day',
+    [startMidnight, startMidnight, end],
+  );
+  const out = Array.from({ length: horizonDays }, () => 0);
+  for (const r of rows) {
+    const day = r['day'] as number;
+    if (day >= 0 && day < horizonDays) out[day] = r['n'] as number;
   }
   return out;
 }

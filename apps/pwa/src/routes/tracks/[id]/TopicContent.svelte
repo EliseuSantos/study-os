@@ -1,6 +1,12 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { deleteContent, getOrCreateDeviceId, listContentByTopic } from '@studyos/db';
+  import {
+    deleteContent,
+    getOrCreateDeviceId,
+    listContentByTopic,
+    listSessionNotes,
+    type SessionNoteRow,
+  } from '@studyos/db';
   import type { ContentItemRow } from '@studyos/shared';
   import { getDb } from '$lib/db/client';
   import { liveQuery } from '$lib/db/live.svelte';
@@ -14,12 +20,23 @@
   );
   const items = $derived(contentLive.value);
 
+  const notesLive = liveQuery(
+    (db) => listSessionNotes(db, topicId),
+    ['sessions'],
+    [] as SessionNoteRow[],
+  );
+  const explanations = $derived(notesLive.value);
+
   $effect(() => {
     void topicId;
     void contentLive.refresh();
+    void notesLive.refresh();
   });
 
-  onDestroy(() => contentLive.destroy());
+  onDestroy(() => {
+    contentLive.destroy();
+    notesLive.destroy();
+  });
 
   const KIND_LABEL: Record<string, string> = {
     video: 'vídeo',
@@ -84,6 +101,22 @@
           >
             ×
           </button>
+        </li>
+      {/each}
+    </ul>
+  </section>
+{/if}
+
+{#if explanations.length > 0}
+  <section data-testid="topic-explanations" class="mt-6">
+    <h3 class="type-label text-text-low">suas explicações</h3>
+    <ul role="list" class="mt-2">
+      {#each explanations as note (note.id)}
+        <li class="border-t border-hairline py-2.5 first:border-t-0">
+          <p class="font-body text-[13.5px] text-text-reading italic">“{note.notes}”</p>
+          <p class="type-meta mt-1 text-text-low tabular-nums">
+            {new Date(note.started_at).toLocaleDateString('pt-BR')}
+          </p>
         </li>
       {/each}
     </ul>

@@ -86,8 +86,8 @@ test('reviewSlices joins fsrs_state for ref_kind/ref_id and filters by fromMs', 
 
   const slices = await reviewSlices(db, NOW - 2000);
   expect(slices).toEqual([
-    { reviewed_at: NOW - 1000, rating: 2, ref_id: topic.id, ref_kind: 'topic' },
-    { reviewed_at: NOW - 500, rating: 4, ref_id: card.id, ref_kind: 'card' },
+    { reviewed_at: NOW - 1000, rating: 2, ref_id: topic.id, ref_kind: 'topic', topic_id: topic.id },
+    { reviewed_at: NOW - 500, rating: 4, ref_id: card.id, ref_kind: 'card', topic_id: topic.id },
   ]);
 });
 

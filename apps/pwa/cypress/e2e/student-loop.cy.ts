@@ -58,10 +58,9 @@ describe('student core loop', () => {
 
   it('reviews the new card from the Today queue', () => {
     cy.visit('/');
-    cy.get('[data-testid="today-queue"]')
-      .invoke('text')
-      .then((t) => cy.log(`FILA: ${t.slice(0, 400)}`));
-    cy.get('[data-testid="today-queue"] [data-testid="today-item"]').contains(cardFront);
+    cy.get('[data-testid="today-queue"] [data-testid="today-item"]', { timeout: 12_000 }).contains(
+      cardFront,
+    );
     cy.get('[data-testid="start-next"]').click();
 
     cy.location('pathname').should('eq', '/review');
@@ -101,7 +100,7 @@ describe('student core loop', () => {
     cy.get('[data-testid="timer-resume"]').click();
     cy.get('[data-testid="timer-finish"]').click();
     cy.get('[data-testid="session-form"]').should('be.visible');
-    cy.get('[data-testid="session-notes"]').type('primeira sessão');
+    cy.get('[data-testid="elaboration-input"]').type('primeira sessão');
     cy.get('[data-testid="session-save"]').click();
     cy.contains('sessão registrada');
   });

@@ -80,3 +80,34 @@ export async function deleteCard(db: DbDriver, deviceId: string, id: string): Pr
   const ts = bumpedTs(existing.updated_at);
   await localWrite(db, 'cards', { ...existing, deleted_at: ts, updated_at: ts }, deviceId);
 }
+
+export interface ErrorCardRow extends CardRow {
+  topic_title: string;
+  due_at: number | null;
+}
+
+/** Error-log cards of a track (kind='error') with topic title and next review. */
+export async function listErrorCards(db: DbDriver, trackId: string): Promise<ErrorCardRow[]> {
+  const rows = await db.exec(
+    'SELECT c.*, t.title AS topic_title, f.due_at AS due_at FROM cards c ' +
+      'JOIN topics t ON t.id = c.topic_id ' +
+      "LEFT JOIN fsrs_state f ON f.ref_kind = 'card' AND f.ref_id = c.id " +
+      "WHERE t.track_id = ? AND c.kind = 'error' AND c.deleted_at IS NULL " +
+      'ORDER BY c.created_at DESC, c.id DESC',
+    [trackId],
+  );
+  return rows.map((r) => ({
+    id: r['id'] as string,
+    topic_id: r['topic_id'] as string,
+    kind: r['kind'] as string,
+    front_md: r['front_md'] as string,
+    back_md: (r['back_md'] ?? null) as string | null,
+    options_json: (r['options_json'] ?? null) as string | null,
+    source_ref: (r['source_ref'] ?? null) as string | null,
+    created_at: r['created_at'] as number,
+    updated_at: r['updated_at'] as number,
+    deleted_at: (r['deleted_at'] ?? null) as number | null,
+    topic_title: r['topic_title'] as string,
+    due_at: (r['due_at'] ?? null) as number | null,
+  }));
+}

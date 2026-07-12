@@ -352,3 +352,24 @@ export function buildToday(inputs: TodayInputs, now: number): TodayItem[] {
 
   return items.toSorted((a, b) => a.sort - b.sort);
 }
+
+/** Review load per day: how many refs come due on each of the next `horizonDays`. */
+export function forecastReviewLoad(
+  dues: { dueAt: number | null }[],
+  todayMidnight: number,
+  horizonDays: number,
+): number[] {
+  const out = Array.from({ length: horizonDays }, () => 0);
+  for (const due of dues) {
+    if (due.dueAt === null) continue;
+    const day = Math.floor((due.dueAt - todayMidnight) / DAY_MS);
+    if (day >= 0 && day < horizonDays) {
+      const current = out[day] ?? 0;
+      out[day] = current + 1;
+    }
+  }
+  return out;
+}
+
+/** Suggest an extra review block when a day's projected load crosses this. */
+export const FORECAST_SUGGEST_THRESHOLD = 30;

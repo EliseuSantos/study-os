@@ -94,3 +94,27 @@ export async function listRecentSessions(db: DbDriver, limit = 20): Promise<Sess
   );
   return rows.map(rowToSession);
 }
+
+export interface SessionNoteRow {
+  id: string;
+  started_at: number;
+  notes: string;
+}
+
+/** Session notes (elaborations) for a topic, newest first. */
+export async function listSessionNotes(
+  db: DbDriver,
+  topicId: string,
+  limit = 10,
+): Promise<SessionNoteRow[]> {
+  const rows = await db.exec(
+    "SELECT id, started_at, notes FROM sessions WHERE topic_id = ? AND notes IS NOT NULL AND notes != '' " +
+      'AND deleted_at IS NULL ORDER BY started_at DESC, id DESC LIMIT ?',
+    [topicId, limit],
+  );
+  return rows.map((r) => ({
+    id: r['id'] as string,
+    started_at: r['started_at'] as number,
+    notes: r['notes'] as string,
+  }));
+}

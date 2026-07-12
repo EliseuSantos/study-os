@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import {
   initialSchedulerState,
+  intervalLabel,
+  previewIntervals,
+  retentionForDate,
   retrievability,
   schedule,
   type Rating,
@@ -161,5 +164,48 @@ describe('fsrs properties', () => {
     expect(r30).toBeLessThan(r3);
     expect(r3).toBeCloseTo(0.9047, 3);
     expect(r30).toBeGreaterThan(0);
+  });
+});
+
+describe('previewIntervals', () => {
+  test('mirrors schedule for every rating', () => {
+    const now = 1_700_000_000_000;
+    let s = initialSchedulerState();
+    s = schedule(s, 3, now - 5 * 86_400_000);
+    const preview = previewIntervals(s, now);
+    for (const rating of [1, 2, 3, 4] as const) {
+      const next = schedule(s, rating, now);
+      expect(preview[rating]).toBe((next.due_at as number) - now);
+    }
+    expect(preview[1]).toBeLessThan(preview[4]);
+  });
+});
+
+describe('intervalLabel', () => {
+  test('formats minutes, hours, days and months', () => {
+    expect(intervalLabel(10 * 60_000)).toBe('10min');
+    expect(intervalLabel(3 * 3_600_000)).toBe('3h');
+    expect(intervalLabel(7 * 86_400_000)).toBe('7d');
+    expect(intervalLabel(90 * 86_400_000)).toBe('3mês');
+  });
+});
+
+describe('retentionForDate (exam mode)', () => {
+  const DAY = 86_400_000;
+  const now = 1_700_000_000_000;
+  test('far from the exam stays at 0.90', () => {
+    expect(retentionForDate(now + 60 * DAY, now)).toBeCloseTo(0.9, 5);
+    expect(retentionForDate(null, now)).toBe(0.9);
+  });
+  test('ramps to ~0.95 near the exam and shortens intervals', () => {
+    expect(retentionForDate(now + 1 * DAY, now)).toBeGreaterThan(0.948);
+    let s = initialSchedulerState();
+    s = schedule(s, 3, now - 20 * DAY);
+    const relaxed = schedule(s, 3, now, 0.9);
+    const strict = schedule(s, 3, now, retentionForDate(now + 5 * DAY, now));
+    expect(strict.due_at as number).toBeLessThan(relaxed.due_at as number);
+  });
+  test('past exam falls back to 0.90', () => {
+    expect(retentionForDate(now - DAY, now)).toBe(0.9);
   });
 });

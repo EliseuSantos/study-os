@@ -2,6 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import Checklist from '$lib/components/Checklist.svelte';
   import Bars from '$lib/components/charts/Bars.svelte';
+  import ErrorLogModal from '$lib/components/ErrorLogModal.svelte';
   import NavIcon from '$lib/components/NavIcon.svelte';
   import { createFocusStore } from '$lib/stores/focus.svelte';
   import { createSessionStore, type SessionType } from '$lib/stores/session.svelte';
@@ -35,6 +36,10 @@
 
   let questionsTotal = $state<number | null>(null);
   let questionsCorrect = $state<number | null>(null);
+  let errorModalOpen = $state(false);
+  let errorModalTopic = $state<string | null>(null);
+  // pós-sessão de questões com erros: convite calmo para registrá-los
+  let pendingErrors = $state<{ count: number; topicId: string | null } | null>(null);
   let notes = $state('');
 
   // Pomodoro method: 25min of focus per cycle; the ring sweeps one cycle.
@@ -130,11 +135,16 @@
   async function onSave(event: SubmitEvent) {
     event.preventDefault();
     const trimmed = notes.trim();
+    const total = normalize(questionsTotal);
+    const correct = normalize(questionsCorrect);
     await store.save({
-      questionsTotal: normalize(questionsTotal),
-      questionsCorrect: normalize(questionsCorrect),
+      questionsTotal: total,
+      questionsCorrect: correct,
       notes: trimmed === '' ? null : trimmed,
     });
+    if (total !== null && correct !== null && correct < total) {
+      pendingErrors = { count: total - correct, topicId: null };
+    }
     questionsTotal = null;
     questionsCorrect = null;
     notes = '';
@@ -156,7 +166,20 @@
     <!-- stage -->
     <section class="flex min-w-0 flex-col gap-5">
       <header>
-        <h1 class="text-[25px] font-semibold tracking-tight text-text-hi">foco</h1>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h1 class="text-[25px] font-semibold tracking-tight text-text-hi">foco</h1>
+          <button
+            data-testid="error-log-open"
+            type="button"
+            onclick={() => {
+              errorModalTopic = null;
+              errorModalOpen = true;
+            }}
+            class="type-meta cursor-pointer rounded-base border border-border px-3 py-1.5 text-text-mid transition-colors duration-(--dur-base) ease-brand hover:text-text-hi"
+          >
+            registrar erro
+          </button>
+        </div>
         <p class="type-meta mt-1 text-text-low tabular-nums">{dateLine}</p>
       </header>
 
@@ -419,10 +442,12 @@
               </div>
             </div>
 
-            <label class="type-label mt-4 block text-text-low" for="session-notes">anotações</label>
+            <label class="type-label mt-4 block text-text-low" for="session-notes">
+              explique em 2 frases o que você estudou · opcional
+            </label>
             <textarea
               id="session-notes"
-              data-testid="session-notes"
+              data-testid="elaboration-input"
               bind:value={notes}
               rows="3"
               placeholder="como foi a sessão? (opcional)"
@@ -543,6 +568,42 @@
     </aside>
   </div>
 </div>
+
+{#if pendingErrors !== null}
+  <div
+    data-testid="error-log-prompt"
+    class="fixed inset-x-0 bottom-16 z-40 mx-auto flex w-fit items-center gap-3 rounded-base border border-border bg-bg-deep px-4 py-2.5 shadow-[0_8px_24px_rgb(0_0_0/0.35)]"
+  >
+    <p class="type-item text-text-body">
+      registrar {pendingErrors.count === 1 ? 'o erro' : `os ${pendingErrors.count} erros`} desta
+      sessão?
+    </p>
+    <button
+      data-testid="error-log-prompt-yes"
+      type="button"
+      onclick={() => {
+        errorModalTopic = pendingErrors?.topicId ?? null;
+        errorModalOpen = true;
+        pendingErrors = null;
+      }}
+      class="type-meta cursor-pointer rounded-base bg-accent px-3 py-1.5 font-semibold text-accent-ink transition-opacity duration-(--dur-base) ease-brand hover:opacity-90"
+    >
+      registrar
+    </button>
+    <button
+      type="button"
+      aria-label="dispensar"
+      onclick={() => (pendingErrors = null)}
+      class="icon-btn"
+    >
+      <NavIcon name="x" size={12} />
+    </button>
+  </div>
+{/if}
+
+{#if errorModalOpen}
+  <ErrorLogModal topicId={errorModalTopic} onClose={() => (errorModalOpen = false)} />
+{/if}
 
 <style>
   .sug-dot {

@@ -5,6 +5,7 @@ export const SYNCED_TABLES = {
       'title',
       'description',
       'target_date',
+      'track_id',
       'status',
       'created_at',
       'updated_at',

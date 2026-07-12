@@ -11,6 +11,7 @@ import {
   type PlannerTopic,
   type RoutineSpec,
   type TodayInputs,
+  forecastReviewLoad,
 } from '../src/planner';
 
 // Local midnight of 2026-01-<d> — TZ-portable because tests and core both use
@@ -247,5 +248,21 @@ describe('buildToday', () => {
     });
     const items = buildToday({ due: [], reminders: [], blocks: [block(90), block(45)] }, now);
     expect(items.map((i) => i.subtitle)).toEqual(['1h30 de estudo', '45min de estudo']);
+  });
+});
+
+describe('forecastReviewLoad (M10)', () => {
+  const DAY = 86_400_000;
+  const today = 1_700_000_000_000;
+  test('buckets dues per day inside the horizon', () => {
+    const dues = [
+      { dueAt: today + 1000 },
+      { dueAt: today + DAY + 5 },
+      { dueAt: today + DAY + 6 },
+      { dueAt: today + 9 * DAY },
+      { dueAt: null },
+      { dueAt: today - DAY },
+    ];
+    expect(forecastReviewLoad(dues, today, 7)).toEqual([1, 2, 0, 0, 0, 0, 0]);
   });
 });

@@ -6,12 +6,14 @@ export interface CreateGoalInput {
   title: string;
   description?: string | null;
   target_date?: number | null;
+  track_id?: string | null;
 }
 
 export interface GoalPatch {
   title?: string;
   description?: string | null;
   target_date?: number | null;
+  track_id?: string | null;
   status?: string;
 }
 
@@ -21,6 +23,7 @@ function rowToGoal(r: Row): GoalRow {
     title: r['title'] as string,
     description: (r['description'] ?? null) as string | null,
     target_date: (r['target_date'] ?? null) as number | null,
+    track_id: (r['track_id'] ?? null) as string | null,
     status: r['status'] as string,
     created_at: r['created_at'] as number,
     updated_at: r['updated_at'] as number,
@@ -45,6 +48,7 @@ export async function createGoal(
     title: input.title,
     description: input.description ?? null,
     target_date: input.target_date ?? null,
+    track_id: input.track_id ?? null,
     status: 'active',
     created_at: ts,
     updated_at: ts,
@@ -86,4 +90,33 @@ export async function deleteGoal(db: DbDriver, deviceId: string, id: string): Pr
   if (!existing || existing.deleted_at !== null) return;
   const ts = bumpedTs(existing.updated_at);
   await localWrite(db, 'goals', { ...existing, deleted_at: ts, updated_at: ts }, deviceId);
+}
+
+/** Next upcoming dated goal linked to the track — the "exam" for exam mode. */
+export async function examGoalForTrack(
+  db: DbDriver,
+  trackId: string,
+  nowMs: number,
+): Promise<GoalRow | null> {
+  const rows = await db.exec(
+    "SELECT * FROM goals WHERE track_id = ? AND status != 'done' AND deleted_at IS NULL " +
+      'AND target_date IS NOT NULL AND target_date >= ? ORDER BY target_date ASC LIMIT 1',
+    [trackId, nowMs],
+  );
+  const r = rows[0];
+  return r ? rowToGoal(r) : null;
+}
+
+/** Track of a review ref: direct for topics, via the card's topic for cards. */
+export async function trackIdForRef(
+  db: DbDriver,
+  refKind: string,
+  refId: string,
+): Promise<string | null> {
+  const sql =
+    refKind === 'topic'
+      ? 'SELECT track_id FROM topics WHERE id = ?'
+      : 'SELECT t.track_id AS track_id FROM cards c JOIN topics t ON t.id = c.topic_id WHERE c.id = ?';
+  const rows = await db.exec(sql, [refId]);
+  return (rows[0]?.['track_id'] ?? null) as string | null;
 }

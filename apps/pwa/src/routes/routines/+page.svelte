@@ -12,6 +12,8 @@
   } from '@event-calendar/core';
   import '@event-calendar/core/index.css';
   import { parseRrule } from '@studyos/core';
+  import { dueByDay } from '@studyos/db';
+  import { getDb } from '$lib/db/client';
   import type { RoutineRow } from '@studyos/shared';
   import { createRemindersStore } from '$lib/stores/reminders.svelte';
   import { createRoutinesStore } from '$lib/stores/routines.svelte';
@@ -23,6 +25,18 @@
   const DAY_LABELS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 
   const store = createRoutinesStore();
+
+  // review-load forecast: due count per day of the visible week
+  let forecast = $state<number[]>([]);
+  $effect(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const weekStart = today.getTime() - today.getDay() * 86_400_000;
+    void getDb()
+      .then((db) => dueByDay(db, weekStart, 7))
+      .then((counts) => (forecast = counts))
+      .catch(() => {});
+  });
   const reminders = createRemindersStore();
   onDestroy(() => {
     store.destroy();
@@ -208,6 +222,20 @@
         extendedProps: { kind: 'reminder', reminderId: reminder.id },
       });
     }
+    // review-load forecast: an all-day marker per day of the current week
+    forecast.forEach((count, day) => {
+      if (count === 0) return;
+      const start = new Date(weekStart);
+      start.setDate(start.getDate() + day);
+      events.push({
+        id: `forecast:${day}`,
+        start,
+        end: new Date(start.getTime() + 86_400_000),
+        allDay: true,
+        title: `≈ ${count} ${count === 1 ? 'revisão' : 'revisões'}`,
+        extendedProps: { kind: 'forecast' },
+      });
+    });
     return events;
   });
 
@@ -237,7 +265,7 @@
       timeGridWeek: 'semana',
       timeGridDay: 'dia',
     },
-    allDaySlot: false,
+    allDaySlot: true,
     firstDay: 0,
     locale: 'pt-BR',
     nowIndicator: true,
@@ -253,6 +281,11 @@
       openModal();
     },
     eventContent: (info: EcEventContentArg) => {
+      if (info.event.extendedProps['kind'] === 'forecast') {
+        return {
+          html: `<div class="rb rb-forecast" data-testid="forecast-day">${esc(info.event.title)}</div>`,
+        };
+      }
       // blocks under ~45min are too short for stacked lines — render one line
       const ms =
         info.event.end !== null && info.event.start !== null
@@ -281,6 +314,7 @@
       };
     },
     eventClick: (info: EcEventClickArg) => {
+      if (info.event.extendedProps['kind'] === 'forecast') return;
       const reminderId = info.event.extendedProps['reminderId'];
       if (typeof reminderId === 'string') {
         const reminder = reminders.reminders.find((r) => r.id === reminderId);
@@ -784,6 +818,17 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .cal :global(.ec-event:has(.rb-forecast)) {
+    border-left: none;
+    background: transparent;
+    padding: 0 6px;
+    cursor: default;
+  }
+  .cal :global(.rb-forecast) {
+    font-size: 10px;
+    color: var(--text-low);
+    font-variant-numeric: tabular-nums;
   }
   .cal :global(.ec-event:has(.rb-reminder)) {
     border-left-color: var(--success);

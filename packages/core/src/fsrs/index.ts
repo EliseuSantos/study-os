@@ -105,8 +105,8 @@ function shortTermStability(stability: number, rating: Rating): number {
   return clampStability(stability * Math.exp(W[17] * (rating - 3 + W[18])));
 }
 
-function nextIntervalDays(stability: number): number {
-  const raw = (stability / FACTOR) * (Math.pow(DESIRED_RETENTION, 1 / DECAY) - 1);
+function nextIntervalDays(stability: number, retention: number): number {
+  const raw = (stability / FACTOR) * (Math.pow(retention, 1 / DECAY) - 1);
   return Math.min(MAX_INTERVAL_DAYS, Math.max(1, Math.round(raw)));
 }
 
@@ -120,10 +120,11 @@ function gradedIntervals(
   hardStability: number,
   goodStability: number,
   easyStability: number,
+  retention: number,
 ): GradedIntervals {
-  let hard = nextIntervalDays(hardStability);
-  let good = nextIntervalDays(goodStability);
-  const easyRaw = nextIntervalDays(easyStability);
+  let hard = nextIntervalDays(hardStability, retention);
+  let good = nextIntervalDays(goodStability, retention);
+  const easyRaw = nextIntervalDays(easyStability, retention);
   hard = Math.min(hard, good);
   good = Math.max(good, hard + 1);
   const easy = Math.max(easyRaw, good + 1);
@@ -141,7 +142,12 @@ function elapsedDaysSince(lastReview: number | null, now: number): number {
   return Math.max(0, (now - lastReview) / DAY_MS);
 }
 
-export function schedule(s: SchedulerState, rating: Rating, now: number): SchedulerState {
+export function schedule(
+  s: SchedulerState,
+  rating: Rating,
+  now: number,
+  desiredRetention: number = DESIRED_RETENTION,
+): SchedulerState {
   const reps = s.reps + 1;
   switch (s.state) {
     case 'new': {
@@ -158,7 +164,12 @@ export function schedule(s: SchedulerState, rating: Rating, now: number): Schedu
           lapses: s.lapses,
         };
       }
-      const intervals = gradedIntervals(initStability(2), initStability(3), initStability(4));
+      const intervals = gradedIntervals(
+        initStability(2),
+        initStability(3),
+        initStability(4),
+        desiredRetention,
+      );
       return {
         state: 'review',
         stability,
@@ -188,7 +199,7 @@ export function schedule(s: SchedulerState, rating: Rating, now: number): Schedu
         state: 'review',
         stability,
         difficulty,
-        due_at: now + nextIntervalDays(stability) * DAY_MS,
+        due_at: now + nextIntervalDays(stability, desiredRetention) * DAY_MS,
         last_review: now,
         reps,
         lapses: s.lapses,
@@ -212,7 +223,7 @@ export function schedule(s: SchedulerState, rating: Rating, now: number): Schedu
       const hardStability = recallStability(s.difficulty, s.stability, retr, 2);
       const goodStability = recallStability(s.difficulty, s.stability, retr, 3);
       const easyStability = recallStability(s.difficulty, s.stability, retr, 4);
-      const intervals = gradedIntervals(hardStability, goodStability, easyStability);
+      const intervals = gradedIntervals(hardStability, goodStability, easyStability, desiredRetention);
       const stability = rating === 2 ? hardStability : rating === 3 ? goodStability : easyStability;
       return {
         state: 'review',
@@ -230,4 +241,40 @@ export function schedule(s: SchedulerState, rating: Rating, now: number): Schedu
 export function retrievability(s: SchedulerState, now: number): number {
   if (s.state === 'new' || s.last_review === null || s.stability <= 0) return 1;
   return forgettingCurve(elapsedDaysSince(s.last_review, now), s.stability);
+}
+
+/** Interval preview per rating — what `schedule` would produce, for button labels. */
+export function previewIntervals(
+  s: SchedulerState,
+  now: number,
+  desiredRetention: number = DESIRED_RETENTION,
+): Record<Rating, number> {
+  const out = {} as Record<Rating, number>;
+  for (const rating of [1, 2, 3, 4] as Rating[]) {
+    const next = schedule(s, rating, now, desiredRetention);
+    out[rating] = next.due_at === null ? 0 : Math.max(0, next.due_at - now);
+  }
+  return out;
+}
+
+/** Compact pt-BR label for an interval in ms: 10min · 3h · 7d · 2mê. */
+export function intervalLabel(ms: number): string {
+  const min = Math.round(ms / 60_000);
+  if (min < 60) return `${Math.max(1, min)}min`;
+  const hours = Math.round(min / 60);
+  if (hours < 48) return `${hours}h`;
+  const days = Math.round(hours / 24);
+  if (days < 60) return `${days}d`;
+  return `${Math.round(days / 30)}mês`;
+}
+
+/**
+ * Exam-mode retention ramp: 0.90 until 30 days from the exam, rising linearly
+ * to 0.95 on exam day. Past the exam (or with no exam) it stays at 0.90.
+ */
+export function retentionForDate(examAt: number | null, now: number): number {
+  if (examAt === null || examAt <= now) return DESIRED_RETENTION;
+  const daysLeft = (examAt - now) / DAY_MS;
+  if (daysLeft >= 30) return DESIRED_RETENTION;
+  return DESIRED_RETENTION + (0.95 - DESIRED_RETENTION) * (1 - daysLeft / 30);
 }

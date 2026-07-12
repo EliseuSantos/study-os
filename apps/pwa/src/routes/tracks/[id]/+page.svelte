@@ -2,14 +2,16 @@
   import { untrack } from 'svelte';
   import { SvelteSet } from 'svelte/reactivity';
   import { page } from '$app/state';
-  import { getOrCreateDeviceId, updateTrack } from '@studyos/db';
+  import { examGoalForTrack, getOrCreateDeviceId, updateTrack } from '@studyos/db';
   import { getDb } from '$lib/db/client';
   import { createTrackDetailStore, type TrackDetailStore } from '$lib/stores/tracksDetail.svelte';
   import { buildTopicTree, type TreeActions } from './tree';
   import TopicNode from './TopicNode.svelte';
   import OutlineImport from './OutlineImport.svelte';
   import TopicForm from './TopicForm.svelte';
+  import WhyNote from '$lib/components/WhyNote.svelte';
   import CardsPanel from './CardsPanel.svelte';
+  import ErrorsPanel from './ErrorsPanel.svelte';
   import CycleEditor from './CycleEditor.svelte';
   import TopicContent from './TopicContent.svelte';
   import LessonsPanel from './LessonsPanel.svelte';
@@ -26,7 +28,19 @@
   // child form. A single value guarantees only one topic-form in the DOM at a time.
   let openFormId = $state<string>('');
   let view = $state<'tree' | 'map' | 'gantt' | 'ciclo'>('tree');
-  let stageTab = $state<'cards' | 'conteudo' | 'aulas'>('cards');
+  let stageTab = $state<'cards' | 'conteudo' | 'aulas' | 'erros'>('cards');
+  // exam mode: dated goal linked to this track
+  let examDate = $state<number | null>(null);
+  $effect(() => {
+    const id = trackId;
+    void getDb()
+      .then((db) => examGoalForTrack(db, id, Date.now()))
+      .then((goal) => (examDate = goal?.target_date ?? null))
+      .catch(() => {});
+  });
+  const examDays = $derived(
+    examDate === null ? null : Math.max(0, Math.ceil((examDate - Date.now()) / 86_400_000)),
+  );
 
   $effect(() => {
     const next = createTrackDetailStore(trackId);
@@ -105,6 +119,12 @@
         <div class="min-w-0">
           <h1 class="truncate text-[25px] font-semibold tracking-tight text-text-hi">{track.title}</h1>
           <p class="type-meta mt-0.5 text-text-low tabular-nums">
+            {#if examDays !== null}
+              <span data-testid="exam-countdown" class="text-accent">
+                prova em {examDays} {examDays === 1 ? 'dia' : 'dias'}
+              </span>
+              ·
+            {/if}
             {doneCount} / {topics.length} tópicos dominados
           </p>
         </div>
@@ -249,6 +269,10 @@
             </div>
           {:else if view === 'ciclo'}
             <div class="border-t border-hairline px-4 py-4 lg:px-5">
+              <WhyNote
+                flag="cycle"
+                text="alternar matérias no ciclo (interleaving) rende mais que maratonar uma só — os pesos definem a frequência."
+              />
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <p class="type-meta text-text-low">
                   {track.mode === 'cycle'
@@ -297,7 +321,7 @@
               aria-label="conteúdo do tópico"
               class="flex gap-1 border-t border-hairline px-4 lg:px-5"
             >
-              {#each [{ id: 'cards', label: `cards · ${cards.length}` }, { id: 'conteudo', label: 'conteúdo' }, { id: 'aulas', label: 'aulas' }] as tab (tab.id)}
+              {#each [{ id: 'cards', label: `cards · ${cards.length}` }, { id: 'conteudo', label: 'conteúdo' }, { id: 'aulas', label: 'aulas' }, { id: 'erros', label: 'erros' }] as tab (tab.id)}
                 <button
                   type="button"
                   role="tab"
@@ -314,7 +338,9 @@
             </div>
 
             <div class="border-t border-hairline px-4 py-4 lg:px-5">
-              {#if stageTab === 'aulas'}
+              {#if stageTab === 'erros'}
+                <ErrorsPanel trackId={track.id} />
+              {:else if stageTab === 'aulas'}
                 <LessonsPanel trackId={track.id} />
               {:else if selectedTopic === null}
                 <p class="type-item text-text-soft">
@@ -323,7 +349,7 @@
                     : 'o conteúdo'}.
                 </p>
               {:else if stageTab === 'cards'}
-                <CardsPanel
+                <CardsPanel trackId={track.id}
                   topic={selectedTopic}
                   {cards}
                   onadd={(front, back) => store?.addCard(front, back) ?? Promise.resolve()}

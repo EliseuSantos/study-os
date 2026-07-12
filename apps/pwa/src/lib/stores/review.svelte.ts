@@ -1,12 +1,18 @@
 import {
+  examGoalForTrack,
   getCard,
   getOrCreateDeviceId,
   listDueReviews,
   recordReview,
+  trackIdForRef,
+  undoLastReview,
   type DueReview,
 } from '@studyos/db';
 import {
   initialSchedulerState,
+  intervalLabel,
+  previewIntervals,
+  retentionForDate,
   schedule,
   type Rating,
   type SchedulerCardState,
@@ -25,9 +31,13 @@ export interface ReviewStore {
   get revealed(): boolean;
   get back(): string | null;
   get source(): CardSourceRef | null;
+  /** interval label per rating for the current card (e.g. { 1: '10min', … }) */
+  get intervals(): Record<Rating, string> | null;
+  get canUndo(): boolean;
   load(): Promise<void>;
   reveal(): void;
   rate(rating: Rating): Promise<void>;
+  undo(): Promise<void>;
 }
 
 function toSchedulerState(row: FsrsStateRow): SchedulerState {
@@ -53,16 +63,32 @@ export function createReviewStore(): ReviewStore {
   let revealed = $state(false);
   let back = $state<string | null>(null);
   let source = $state<CardSourceRef | null>(null);
+  // exam mode: retention target resolved per item's track (0.9 without a dated goal)
+  let retention = $state(0.9);
   let shownAt = 0;
   let rating = false;
+  // snapshot for undo: the fsrs row (or null for first review) before the last rating
+  let lastRated = $state<{ item: DueReview; prior: DueReview['fsrs'] } | null>(null);
   let backToken = 0;
 
   async function loadBack(): Promise<void> {
     const token = ++backToken;
     back = null;
     source = null;
+    retention = 0.9;
     const item = items[index];
-    if (!item || item.refKind !== 'card') return;
+    if (!item) return;
+    {
+      const db = await getDb();
+      const trackId = await trackIdForRef(db, item.refKind, item.refId);
+      if (trackId !== null) {
+        const exam = await examGoalForTrack(db, trackId, Date.now());
+        if (token === backToken) {
+          retention = retentionForDate(exam?.target_date ?? null, Date.now());
+        }
+      }
+    }
+    if (item.refKind !== 'card') return;
     const db = await getDb();
     const card = await getCard(db, item.refId);
     if (token !== backToken) return;
@@ -98,6 +124,21 @@ export function createReviewStore(): ReviewStore {
     get source() {
       return source;
     },
+    get intervals() {
+      const item = items[index];
+      if (!item) return null;
+      const state = item.fsrs ? toSchedulerState(item.fsrs) : initialSchedulerState();
+      const ms = previewIntervals(state, Date.now(), retention);
+      return {
+        1: intervalLabel(ms[1]),
+        2: intervalLabel(ms[2]),
+        3: intervalLabel(ms[3]),
+        4: intervalLabel(ms[4]),
+      };
+    },
+    get canUndo() {
+      return lastRated !== null;
+    },
     async load() {
       const db = await getDb();
       items = await listDueReviews(db, Date.now());
@@ -117,7 +158,7 @@ export function createReviewStore(): ReviewStore {
       try {
         const now = Date.now();
         const state = item.fsrs ? toSchedulerState(item.fsrs) : initialSchedulerState();
-        const next = schedule(state, value, now);
+        const next = schedule(state, value, now, retention);
         const db = await getDb();
         const deviceId = await getOrCreateDeviceId(db);
         await recordReview(db, deviceId, {
@@ -128,7 +169,25 @@ export function createReviewStore(): ReviewStore {
           reviewedAt: now,
           elapsedMs: Math.max(0, now - shownAt),
         });
+        lastRated = { item, prior: item.fsrs };
         index += 1;
+        revealed = false;
+        shownAt = Date.now();
+        void loadBack();
+      } finally {
+        rating = false;
+      }
+    },
+    async undo() {
+      const last = lastRated;
+      if (!last || rating) return;
+      rating = true;
+      try {
+        const db = await getDb();
+        const deviceId = await getOrCreateDeviceId(db);
+        await undoLastReview(db, deviceId, last.item.refKind, last.item.refId, last.prior);
+        lastRated = null;
+        index = Math.max(0, index - 1);
         revealed = false;
         shownAt = Date.now();
         void loadBack();

@@ -16,6 +16,8 @@ export interface SessionSlice {
   questions_correct: number | null;
   /** session type (theory|questions|review|reading); optional for older callers */
   type?: string;
+  /** 'quiz' marks in-app measured results (M9) */
+  notes?: string | null;
 }
 
 export interface ReviewSlice {
@@ -23,6 +25,8 @@ export interface ReviewSlice {
   rating: number;
   ref_id: string;
   ref_kind: string;
+  /** resolved topic (card reviews map through cards.topic_id) */
+  topic_id?: string | null;
 }
 
 /**
@@ -80,26 +84,41 @@ export function currentStreak(perDay: { day: number; seconds: number }[], now: n
  */
 export function accuracyByTrack(
   s: SessionSlice[],
-): { track_id: string | null; total: number; correct: number; pct: number | null }[] {
+): {
+  track_id: string | null;
+  total: number;
+  correct: number;
+  pct: number | null;
+  measured: boolean;
+}[] {
+  // measured (in-app quiz) results dominate self-reported ones per track
   const rows = new Map<
     string | null,
-    { track_id: string | null; total: number; correct: number }
+    { track_id: string | null; total: number; correct: number; measured: boolean }
   >();
   for (const session of s) {
+    const isMeasured = session.notes === 'quiz';
     let row = rows.get(session.track_id);
     if (!row) {
-      row = { track_id: session.track_id, total: 0, correct: 0 };
+      row = { track_id: session.track_id, total: 0, correct: 0, measured: false };
       rows.set(session.track_id, row);
     }
-    if (session.questions_total !== null && session.questions_total > 0) {
-      row.total += session.questions_total;
-      row.correct += session.questions_correct ?? 0;
+    if (session.questions_total === null || session.questions_total <= 0) continue;
+    if (isMeasured && !row.measured) {
+      // first measured result: drop the self-reported accumulation
+      row.total = 0;
+      row.correct = 0;
+      row.measured = true;
     }
+    if (row.measured && !isMeasured) continue;
+    row.total += session.questions_total;
+    row.correct += session.questions_correct ?? 0;
   }
   return [...rows.values()].map((row) => ({
     track_id: row.track_id,
     total: row.total,
     correct: row.correct,
+    measured: row.measured,
     pct: row.total > 0 ? (row.correct / row.total) * 100 : null,
   }));
 }
@@ -144,9 +163,9 @@ export interface WeakTopic {
  * reviews qualify; sorted by score desc (topic_id asc tiebreak), top `limit`
  * (default 5).
  *
- * Limitation (M3): only reviews with `ref_kind === 'topic'` are scored —
- * card reviews carry no card→topic mapping in `ReviewSlice`, so they are
- * ignored. Sessions are matched by `topic_id`.
+ * Reviews aggregate by resolved `topic_id` (M9): card reviews map through
+ * their card's topic, so the insight works with real usage. Sessions are
+ * matched by `topic_id`.
  */
 export function weakTopics(
   reviews: ReviewSlice[],
@@ -155,11 +174,12 @@ export function weakTopics(
 ): WeakTopic[] {
   const ratings = new Map<string, { total: number; low: number }>();
   for (const review of reviews) {
-    if (review.ref_kind !== 'topic') continue;
-    let entry = ratings.get(review.ref_id);
+    const topicId = review.topic_id ?? (review.ref_kind === 'topic' ? review.ref_id : null);
+    if (topicId === null) continue;
+    let entry = ratings.get(topicId);
     if (!entry) {
       entry = { total: 0, low: 0 };
-      ratings.set(review.ref_id, entry);
+      ratings.set(topicId, entry);
     }
     entry.total += 1;
     if (review.rating <= 2) entry.low += 1;

@@ -5,7 +5,7 @@ import { liveQuery } from '$lib/db/live.svelte';
 
 export interface GoalsStore {
   get goals(): GoalRow[];
-  add(title: string, targetDate?: number | null): Promise<void>;
+  add(title: string, targetDate?: number | null, trackId?: string | null): Promise<void>;
   toggleDone(goal: GoalRow): Promise<void>;
   remove(id: string): Promise<void>;
   destroy(): void;
@@ -18,12 +18,12 @@ export function createGoalsStore(): GoalsStore {
     get goals() {
       return live.value;
     },
-    async add(title: string, targetDate: number | null = null) {
+    async add(title: string, targetDate: number | null = null, trackId: string | null = null) {
       const trimmed = title.trim();
       if (!trimmed) return;
       const db = await getDb();
       const deviceId = await getOrCreateDeviceId(db);
-      await createGoal(db, deviceId, { title: trimmed, target_date: targetDate });
+      await createGoal(db, deviceId, { title: trimmed, target_date: targetDate, track_id: trackId });
       await live.refresh();
     },
     async toggleDone(goal: GoalRow) {

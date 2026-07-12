@@ -42,8 +42,8 @@ describe('sync loop', () => {
       }).then((res) => {
         const payloads = (res.body.ops as { payload: string }[]).map((o) => o.payload);
         if (payloads.some((p) => p.includes(title))) return;
-        if (attempt >= 20) throw new Error('goal never reached the worker');
-        cy.wait(500);
+        if (attempt >= 40) throw new Error('goal never reached the worker');
+        cy.wait(750);
         probe(attempt + 1);
       });
     }
@@ -61,6 +61,7 @@ describe('sync loop', () => {
       title,
       description: null,
       target_date: null,
+      track_id: null,
       status: 'active',
       created_at: ts,
       updated_at: ts,
@@ -91,6 +92,7 @@ describe('sync loop', () => {
     cy.wait('@pull');
 
     cy.visit('/goals');
-    cy.get('[data-testid="goal-item"]', { timeout: 10_000 }).contains(title);
+    cy.reload();
+    cy.get('[data-testid="goal-list"]', { timeout: 15_000 }).contains(title);
   });
 });

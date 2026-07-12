@@ -1,4 +1,5 @@
 <script lang="ts">
+  import WhyNote from '$lib/components/WhyNote.svelte';
   function extractVideoId(url: string): string {
     return /[?&]v=([A-Za-z0-9_-]{5,20})/.exec(url)?.[1] ?? '';
   }
@@ -30,6 +31,11 @@
   const donePct = $derived(total === 0 ? 0 : Math.round((store.done / total) * 100));
 
   function onkeydown(event: KeyboardEvent) {
+    if (event.key === 'z' && store.canUndo) {
+      event.preventDefault();
+      void store.undo();
+      return;
+    }
     if (!store.current) return;
     if (!store.revealed) {
       if (event.key === ' ' || event.key === 'Enter') {
@@ -54,6 +60,10 @@
 <svelte:window {onkeydown} />
 
 <div class="mx-auto w-full max-w-[720px] px-4 py-6 lg:py-10">
+  <WhyNote
+    flag="review"
+    text="revisar no limite do esquecimento fixa mais com menos tempo — as notas 1–4 calibram o próximo encontro."
+  />
   {#if !store.loading}
     {#if store.current}
       <div class="flex items-baseline justify-between gap-4">
@@ -147,9 +157,24 @@
                   {rating.value}
                 </kbd>
                 <span class="text-[13.5px] font-semibold">{rating.label}</span>
+                {#if store.intervals !== null}
+                  <span class="text-[10.5px] text-text-low tabular-nums">
+                    {store.intervals[rating.value]}
+                  </span>
+                {/if}
               </button>
             {/each}
           </div>
+          {#if store.canUndo}
+            <button
+              data-testid="review-undo"
+              type="button"
+              onclick={() => void store.undo()}
+              class="type-meta mx-auto mt-4 block cursor-pointer text-text-low transition-colors duration-(--dur-base) ease-brand hover:text-text-mid"
+            >
+              desfazer última avaliação · <kbd class="kbd">z</kbd>
+            </button>
+          {/if}
         {:else}
           <button
             data-testid="review-reveal"
@@ -159,6 +184,16 @@
           >
             mostrar resposta
           </button>
+          {#if store.canUndo}
+            <button
+              data-testid="review-undo"
+              type="button"
+              onclick={() => void store.undo()}
+              class="type-meta mx-auto mt-4 block cursor-pointer text-text-low transition-colors duration-(--dur-base) ease-brand hover:text-text-mid"
+            >
+              desfazer última avaliação · <kbd class="kbd">z</kbd>
+            </button>
+          {/if}
         {/if}
       </div>
 
@@ -176,6 +211,16 @@
           <span class="done-ring" aria-hidden="true">✓</span>
           <p class="type-item mt-4 text-text-body">revisões em dia.</p>
           <p class="type-meta mt-1 text-text-soft">a memória agradece — volte amanhã.</p>
+          {#if store.canUndo}
+            <button
+              data-testid="review-undo"
+              type="button"
+              onclick={() => void store.undo()}
+              class="type-meta mt-4 block w-full cursor-pointer text-text-low transition-colors duration-(--dur-base) ease-brand hover:text-text-mid"
+            >
+              desfazer última avaliação · <kbd class="kbd">z</kbd>
+            </button>
+          {/if}
           <a
             href="/"
             class="type-meta mt-6 inline-flex h-(--h-button-sm) items-center rounded-base border border-border px-4 text-text-mid transition-colors duration-(--dur-base) ease-brand hover:text-text-hi"

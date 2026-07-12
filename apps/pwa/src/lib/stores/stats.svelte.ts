@@ -143,7 +143,7 @@ async function loadStats(db: DbDriver): Promise<StatsData> {
     } else {
       accuracy.push({
         key: row.track_id ?? 'null',
-        label: `${title} · ${Math.round(row.pct)}% · ${row.total} ${row.total === 1 ? 'questão' : 'questões'}`,
+        label: `${title} · ${Math.round(row.pct)}% · ${row.total} ${row.total === 1 ? 'questão' : 'questões'}${row.measured ? ' · medido' : ''}`,
         pct: Math.round(row.pct),
       });
     }
