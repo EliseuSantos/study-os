@@ -49,6 +49,10 @@ class FakeCache implements CacheLike {
     this.store.set(req.url, res);
   }
 
+  async delete(req: Request): Promise<boolean> {
+    return this.store.delete(req.url);
+  }
+
   get size(): number {
     return this.store.size;
   }

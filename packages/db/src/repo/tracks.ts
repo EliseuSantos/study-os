@@ -11,6 +11,7 @@ export interface CreateTrackInput {
 }
 
 export interface TrackPatch {
+  origin_version?: string | null;
   title?: string;
   description?: string | null;
   mode?: string;

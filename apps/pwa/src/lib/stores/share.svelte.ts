@@ -31,6 +31,33 @@ export async function buildTrackSnapshot(trackId: string): Promise<TrackSnapshot
   return buildSnapshot(data);
 }
 
+/** PUT /share/:id (bearer): republish the same link in place. */
+export async function republishSnapshot(
+  id: string,
+  snapshot: TrackSnapshot,
+): Promise<ShareCreateResult> {
+  const res = await authedFetch(`/share/${id}`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(snapshot),
+  });
+  if (!res.ok) throw new Error(`republish failed: ${res.status}`);
+  return (await res.json()) as ShareCreateResult;
+}
+
+/** The publisher's device remembers its share id per track (local-only). */
+export async function rememberShareId(trackId: string, shareId: string): Promise<void> {
+  const { setSettingStmt } = await import('@studyos/db');
+  const db = await getDb();
+  await db.batch([setSettingStmt(`share_id_${trackId}`, shareId)]);
+}
+
+export async function recallShareId(trackId: string): Promise<string | null> {
+  const { getSetting } = await import('@studyos/db');
+  const db = await getDb();
+  return getSetting(db, `share_id_${trackId}`);
+}
+
 /** POST /share (bearer) → `{ id, hash }`. Throws on any failure. */
 export async function publishSnapshot(snapshot: TrackSnapshot): Promise<ShareCreateResult> {
   const res = await authedFetch('/share', {

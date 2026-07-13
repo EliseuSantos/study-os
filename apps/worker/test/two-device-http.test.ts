@@ -12,13 +12,20 @@ import { FakeR2 } from './fake-r2';
 const TOKEN = 'test';
 const app = createApp();
 
-const MIGRATION_PATH = new URL('../../../packages/db/migrations/0001_init.sql', import.meta.url)
-  .pathname;
+const MIGRATIONS_DIR = new URL('../../../packages/db/migrations/', import.meta.url).pathname;
 
 async function createLocalDb(): Promise<DbDriver> {
   const driver = bunSqliteDriver(new Database(':memory:'));
-  const sql = await Bun.file(MIGRATION_PATH).text();
-  await migrate(driver, [{ version: 1, sql }]);
+  // full migration chain: the client schema must match current repos
+  const glob = new Bun.Glob('*.sql');
+  const files = [...glob.scanSync(MIGRATIONS_DIR)].toSorted();
+  const migrations = await Promise.all(
+    files.map(async (file, i) => ({
+      version: i + 1,
+      sql: await Bun.file(`${MIGRATIONS_DIR}${file}`).text(),
+    })),
+  );
+  await migrate(driver, migrations);
   return driver;
 }
 

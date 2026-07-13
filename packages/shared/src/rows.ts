@@ -32,6 +32,8 @@ export interface TopicRow {
   notes_md: string | null;
   position: number;
   status: string;
+  /** publisher's topic sid saved at import — merge identity across republishes */
+  origin_key: string | null;
   updated_at: number;
   deleted_at: number | null;
 }

@@ -46,6 +46,10 @@ class FakeCache implements CacheLike {
     this.store.set(req.url, res);
   }
 
+  async delete(req: Request): Promise<boolean> {
+    return this.store.delete(req.url);
+  }
+
   get size(): number {
     return this.store.size;
   }
@@ -160,5 +164,52 @@ describe('GET /share/:id', () => {
     const second = await app.request(`/share/${id}`, {}, env);
     expect(r2.getCalls).toBe(1);
     expect(await second.json()).toEqual(await first.json());
+  });
+});
+
+describe('PUT /share/:id (republish)', () => {
+  test('overwrites in place: same id, new hash, new content served', async () => {
+    const post = await app.request(
+      '/share',
+      { method: 'POST', headers: AUTH, body: SNAPSHOT_JSON },
+      env,
+    );
+    const { id, hash } = (await post.json()) as { id: string; hash: string };
+
+    const changed = JSON.parse(SNAPSHOT_JSON) as { track: { title: string } };
+    changed.track.title = 'Edital atualizado';
+    const put = await app.request(
+      `/share/${id}`,
+      { method: 'PUT', headers: AUTH, body: JSON.stringify(changed) },
+      env,
+    );
+    expect(put.status).toBe(200);
+    const updated = (await put.json()) as { id: string; hash: string };
+    expect(updated.id).toBe(id);
+    expect(updated.hash).not.toBe(hash);
+
+    const got = await app.request(`/share/${id}`, {}, env);
+    const payload = (await got.json()) as {
+      hash: string;
+      snapshot: { track: { title: string } };
+    };
+    expect(payload.hash).toBe(updated.hash);
+    expect(payload.snapshot.track.title).toBe('Edital atualizado');
+  });
+
+  test('404 for unknown share ids and 401 without auth', async () => {
+    const res = await app.request(
+      '/share/nao-existe-1234',
+      { method: 'PUT', headers: AUTH, body: SNAPSHOT_JSON },
+      env,
+    );
+    expect(res.status).toBe(404);
+
+    const unauth = await app.request(
+      '/share/qualquer',
+      { method: 'PUT', body: SNAPSHOT_JSON },
+      env,
+    );
+    expect(unauth.status).toBe(401);
   });
 });

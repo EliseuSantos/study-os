@@ -9,11 +9,15 @@ export const SNAPSHOT_VERSION = 1;
 export interface TrackSnapshot {
   format: 'studyos-track';
   version: 1;
+  /** monotonic content version set by the publisher (1 when absent) */
+  content_version?: number;
   exported_at: number;
   track: { title: string; description: string | null; mode: string };
   topics: {
     key: number;
     parent_key: number | null;
+    /** publisher's stable topic id — merge identity across republishes */
+    sid?: string;
     title: string;
     notes_md: string | null;
     position: number;
@@ -119,6 +123,7 @@ const byPosition = <T extends { position: number; title: string }>(a: T, b: T): 
 export function buildSnapshot(
   input: BuildSnapshotInput,
   exportedAt: number = Date.now(),
+  contentVersion = 1,
 ): TrackSnapshot {
   // Parents-first pre-order walk over the topic tree.
   const topicIds = new Set(input.topics.map((t) => t.id));
@@ -142,6 +147,7 @@ export function buildSnapshot(
       topics.push({
         key,
         parent_key: parentKey,
+        sid: topic.id,
         title: topic.title,
         notes_md: topic.notes_md,
         position: topic.position,
@@ -222,6 +228,7 @@ export function buildSnapshot(
   return {
     format: SNAPSHOT_FORMAT,
     version: SNAPSHOT_VERSION,
+    content_version: contentVersion,
     exported_at: exportedAt,
     track: {
       title: input.track.title,
@@ -307,6 +314,9 @@ export function parseSnapshot(json: string): TrackSnapshot {
   if (raw['format'] !== SNAPSHOT_FORMAT) fail(`format must be '${SNAPSHOT_FORMAT}'`);
   if (raw['version'] !== SNAPSHOT_VERSION) fail(`version must be ${SNAPSHOT_VERSION}`);
   const exportedAt = finiteNum(raw['exported_at'], 'exported_at');
+  const contentVersionRaw = raw['content_version'];
+  const contentVersion =
+    contentVersionRaw === undefined ? undefined : finiteNum(contentVersionRaw, 'content_version');
 
   const trackRaw = recordAt(raw['track'], 'track');
   const title = str(trackRaw['title'], 'track.title');
@@ -323,9 +333,11 @@ export function parseSnapshot(json: string): TrackSnapshot {
     const key = ordinal(t['key'], `topics[${i}].key`);
     if (topicKeys.has(key)) fail(`topics[${i}].key ${key} is duplicated`);
     topicKeys.add(key);
+    const sidRaw = t['sid'];
     return {
       key,
       parent_key: ordinalOrNull(t['parent_key'], `topics[${i}].parent_key`),
+      ...(sidRaw === undefined ? {} : { sid: str(sidRaw, `topics[${i}].sid`) }),
       title: str(t['title'], `topics[${i}].title`),
       notes_md: strOrNull(t['notes_md'], `topics[${i}].notes_md`),
       position: finiteNum(t['position'], `topics[${i}].position`),
@@ -405,6 +417,7 @@ export function parseSnapshot(json: string): TrackSnapshot {
   return {
     format: SNAPSHOT_FORMAT,
     version: SNAPSHOT_VERSION,
+    ...(contentVersion === undefined ? {} : { content_version: contentVersion }),
     exported_at: exportedAt,
     track,
     topics,
@@ -464,4 +477,58 @@ export function snapshotHash(s: TrackSnapshot): string {
     hash = ((hash ^ BigInt(unit & 0xff)) * FNV_PRIME_64) & MASK_64;
   }
   return hash.toString(16).padStart(16, '0');
+}
+
+// ---- snapshot merge (track versioning) ------------------------------------
+// Plans how a republished snapshot lands on an already-imported track without
+// touching local progress: topics match by origin_key (the publisher sid saved
+// at import time), falling back to normalized title; matched topics keep their
+// local status/cards, removed ones soft-delete, new ones arrive as pending.
+
+export interface MergeLocalTopic {
+  id: string;
+  title: string;
+  origin_key: string | null;
+}
+
+export interface SnapshotMergePlan {
+  /** local topic id ← incoming snapshot topic (title/notes/position refresh) */
+  matched: { localId: string; topic: TrackSnapshot['topics'][number] }[];
+  /** incoming topics with no local counterpart (import as pending) */
+  added: TrackSnapshot['topics'][number][];
+  /** local topic ids gone upstream (soft delete; local cards go with them) */
+  removed: string[];
+}
+
+function normTitle(t: string): string {
+  return t.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+export function planSnapshotMerge(
+  local: MergeLocalTopic[],
+  incoming: TrackSnapshot['topics'],
+): SnapshotMergePlan {
+  const bySid = new Map<string, MergeLocalTopic>();
+  const byTitle = new Map<string, MergeLocalTopic>();
+  for (const topic of local) {
+    if (topic.origin_key !== null) bySid.set(topic.origin_key, topic);
+    if (!byTitle.has(normTitle(topic.title))) byTitle.set(normTitle(topic.title), topic);
+  }
+
+  const matched: SnapshotMergePlan['matched'] = [];
+  const added: SnapshotMergePlan['added'] = [];
+  const claimed = new Set<string>();
+  for (const topic of incoming) {
+    const hit =
+      (topic.sid !== undefined ? bySid.get(topic.sid) : undefined) ??
+      byTitle.get(normTitle(topic.title));
+    if (hit !== undefined && !claimed.has(hit.id)) {
+      claimed.add(hit.id);
+      matched.push({ localId: hit.id, topic });
+    } else {
+      added.push(topic);
+    }
+  }
+  const removed = local.filter((t) => !claimed.has(t.id)).map((t) => t.id);
+  return { matched, added, removed };
 }

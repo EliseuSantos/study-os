@@ -5,7 +5,7 @@ import type { Env } from './env';
 import { handleFirecrawlScrape, handleFirecrawlSearch } from './firecrawl';
 import { handleRss, handleYoutubeSearch, handleYoutubeTranscript } from './proxy';
 import { handleSubscribe, handleVapidKey } from './push';
-import { handleShareCreate, handleShareGet } from './share';
+import { handleShareCreate, handleShareGet, handleShareUpdate } from './share';
 import { handlePull, handlePush } from './sync';
 
 export function createApp(): Hono<{ Bindings: Env }> {
@@ -27,6 +27,7 @@ export function createApp(): Hono<{ Bindings: Env }> {
   // teacher-side POST goes through bearer auth, mounted inline on its route.
   app.get('/share/:id', handleShareGet);
   app.post('/share', bearerAuth, handleShareCreate);
+  app.put('/share/:id', bearerAuth, handleShareUpdate);
   // Dynamic app routes (run_worker_first patterns without a prerendered file)
   // get the SPA fallback; everything static is served by the assets layer.
   app.get('*', async (c) => {

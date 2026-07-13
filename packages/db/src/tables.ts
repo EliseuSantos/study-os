@@ -35,6 +35,7 @@ export const SYNCED_TABLES = {
       'notes_md',
       'position',
       'status',
+      'origin_key',
       'updated_at',
       'deleted_at',
     ],

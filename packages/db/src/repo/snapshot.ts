@@ -20,11 +20,14 @@ import { listLessons } from './lessons';
 export interface TrackSnapshotShape {
   format: 'studyos-track';
   version: 1;
+  content_version?: number;
   exported_at: number;
   track: { title: string; description: string | null; mode: string };
   topics: {
     key: number;
     parent_key: number | null;
+    /** publisher's stable topic id (merge identity) */
+    sid?: string;
     title: string;
     notes_md: string | null;
     position: number;
@@ -179,6 +182,7 @@ export async function importSnapshot(
       notes_md: t.notes_md,
       position: t.position,
       status: 'pending',
+      origin_key: t.sid ?? null,
       updated_at: ts,
       deleted_at: null,
     } satisfies TopicRow;
@@ -258,4 +262,116 @@ export async function importSnapshot(
 
   await db.batch(stmts);
   return track.id;
+}
+
+// ---- snapshot merge executor (track versioning) ----------------------------
+// Applies a merge plan (computed in core's planSnapshotMerge — db stays
+// core-free, the plan is a plain shape) in ONE batch, preserving local
+// progress: matched topics keep their status and cards; removed topics soft
+// delete; added topics arrive pending with their publisher sid; cards land
+// only under added topics.
+
+export interface SnapshotMergePlanShape {
+  matched: { localId: string; topic: TrackSnapshotShape['topics'][number] }[];
+  added: TrackSnapshotShape['topics'][number][];
+  removed: string[];
+}
+
+export async function applySnapshotMerge(
+  db: DbDriver,
+  deviceId: string,
+  trackId: string,
+  plan: SnapshotMergePlanShape,
+  snapshot: TrackSnapshotShape,
+): Promise<{ updated: number; added: number; removed: number }> {
+  const ts = now();
+  const stmts: Stmt[] = [];
+
+  // key → local id across matched + added (parents can point at either)
+  const idByKey = new Map<number, string>();
+  for (const m of plan.matched) idByKey.set(m.topic.key, m.localId);
+  for (const a of plan.added) idByKey.set(a.key, newId());
+
+  const localTopics = await db.exec(
+    'SELECT * FROM topics WHERE track_id = ? AND deleted_at IS NULL',
+    [trackId],
+  );
+  const localById = new Map(localTopics.map((r) => [r['id'] as string, r]));
+
+  for (const m of plan.matched) {
+    const current = localById.get(m.localId);
+    if (current === undefined) continue;
+    const parentKey = m.topic.parent_key;
+    const topic = {
+      id: m.localId,
+      track_id: trackId,
+      parent_id: parentKey === null ? null : (idByKey.get(parentKey) ?? null),
+      title: m.topic.title,
+      notes_md: m.topic.notes_md,
+      position: m.topic.position,
+      status: current['status'] as string, // progress is the student's
+      origin_key: m.topic.sid ?? (current['origin_key'] as string | null),
+      updated_at: Math.max(ts, (current['updated_at'] as number) + 1),
+      deleted_at: null,
+    } satisfies TopicRow;
+    stmts.push(...localWriteStmts('topics', topic, deviceId));
+  }
+
+  for (const a of plan.added) {
+    const parentKey = a.parent_key;
+    const topic = {
+      id: idByKey.get(a.key) as string,
+      track_id: trackId,
+      parent_id: parentKey === null ? null : (idByKey.get(parentKey) ?? null),
+      title: a.title,
+      notes_md: a.notes_md,
+      position: a.position,
+      status: 'pending',
+      origin_key: a.sid ?? null,
+      updated_at: ts,
+      deleted_at: null,
+    } satisfies TopicRow;
+    stmts.push(...localWriteStmts('topics', topic, deviceId));
+  }
+
+  for (const localId of plan.removed) {
+    const current = localById.get(localId);
+    if (current === undefined) continue;
+    const bumped = Math.max(ts, (current['updated_at'] as number) + 1);
+    const topic = {
+      id: localId,
+      track_id: trackId,
+      parent_id: (current['parent_id'] ?? null) as string | null,
+      title: current['title'] as string,
+      notes_md: (current['notes_md'] ?? null) as string | null,
+      position: current['position'] as number,
+      status: current['status'] as string,
+      origin_key: (current['origin_key'] ?? null) as string | null,
+      updated_at: bumped,
+      deleted_at: bumped,
+    } satisfies TopicRow;
+    stmts.push(...localWriteStmts('topics', topic, deviceId));
+  }
+
+  // incoming cards land only under newly added topics (matched keep local cards)
+  const addedKeys = new Set(plan.added.map((a) => a.key));
+  for (const c of snapshot.cards) {
+    if (!addedKeys.has(c.topic_key)) continue;
+    const card = {
+      id: newId(),
+      topic_id: idByKey.get(c.topic_key) as string,
+      kind: c.kind,
+      front_md: c.front_md,
+      back_md: c.back_md,
+      options_json: c.options_json,
+      source_ref: null,
+      created_at: ts,
+      updated_at: ts,
+      deleted_at: null,
+    } satisfies CardRow;
+    stmts.push(...localWriteStmts('cards', card, deviceId));
+  }
+
+  await db.batch(stmts);
+  return { updated: plan.matched.length, added: plan.added.length, removed: plan.removed.length };
 }

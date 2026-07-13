@@ -29,6 +29,7 @@ function rowToTopic(r: Row): TopicRow {
     notes_md: (r['notes_md'] ?? null) as string | null,
     position: r['position'] as number,
     status: r['status'] as string,
+    origin_key: (r['origin_key'] ?? null) as string | null,
     updated_at: r['updated_at'] as number,
     deleted_at: (r['deleted_at'] ?? null) as number | null,
   };
@@ -62,6 +63,7 @@ export async function createTopic(
     notes_md: input.notes_md ?? null,
     position,
     status: 'pending',
+    origin_key: null,
     updated_at: now(),
     deleted_at: null,
   } satisfies TopicRow;
@@ -89,6 +91,7 @@ export async function createTopicTree(
         notes_md: null,
         position,
         status: 'pending',
+        origin_key: null,
         updated_at: ts,
         deleted_at: null,
       } satisfies TopicRow;

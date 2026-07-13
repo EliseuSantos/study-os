@@ -7,6 +7,7 @@ import proxyUsageSql from '@studyos/db/migrations/0002_proxy_usage.sql?raw';
 import annotationsSql from '@studyos/db/migrations/0003_annotations.sql?raw';
 import goalsTrackSql from '@studyos/db/migrations/0004_goals_track.sql?raw';
 import questionAttemptsSql from '@studyos/db/migrations/0005_question_attempts.sql?raw';
+import topicsOriginKeySql from '@studyos/db/migrations/0006_topics_origin_key.sql?raw';
 import { migrate, type Row, type SqlValue, type Stmt } from '@studyos/db';
 import { DB_CHANNEL, DB_NAME } from '@studyos/shared';
 import type { DbBroadcast, DbReady, DbRequest, DbResponse } from './rpc';
@@ -84,6 +85,7 @@ async function init(): Promise<void> {
     { version: 3, sql: annotationsSql },
     { version: 4, sql: goalsTrackSql },
     { version: 5, sql: questionAttemptsSql },
+    { version: 6, sql: topicsOriginKeySql },
   ]);
 }
 

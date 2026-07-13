@@ -43,6 +43,10 @@ class FakeCache implements CacheLike {
   async put(req: Request, res: Response): Promise<void> {
     this.store.set(req.url, res);
   }
+
+  async delete(req: Request): Promise<boolean> {
+    return this.store.delete(req.url);
+  }
 }
 
 const realFetch = globalThis.fetch;

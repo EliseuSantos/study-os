@@ -26,6 +26,40 @@ async function gunzip(buf: ArrayBuffer): Promise<string> {
   return new Response(stream.pipeThrough(new DecompressionStream('gzip'))).text();
 }
 
+/** PUT /share/:id (bearer): republish — overwrite an existing share in place. */
+export const handleShareUpdate: Handler<{ Bindings: Env }> = async (c) => {
+  const id = c.req.param('id') ?? '';
+  if (id === '') return c.json({ error: 'share not found' }, 404);
+  const declared = Number(c.req.header('content-length') ?? '0');
+  if (declared > MAX_BODY_BYTES) return c.json({ error: 'snapshot too large' }, 413);
+  const body = await c.req.text();
+  if (body.length > MAX_BODY_BYTES) return c.json({ error: 'snapshot too large' }, 413);
+
+  let snapshot;
+  try {
+    snapshot = parseSnapshot(body);
+  } catch {
+    return c.json({ error: 'invalid snapshot' }, 400);
+  }
+
+  const db = d1Driver(c.env.DB);
+  const rows = await db.exec('SELECT r2_key FROM track_shares WHERE id = ?', [id]);
+  const r2Key = rows[0]?.['r2_key'] as string | undefined;
+  if (r2Key === undefined) return c.json({ error: 'share not found' }, 404);
+
+  const hash = snapshotHash(snapshot);
+  await c.env.SHARES.put(r2Key, await gzip(body));
+  await db.exec('UPDATE track_shares SET version_hash = ?, title = ? WHERE id = ?', [
+    hash,
+    snapshot.track.title,
+    id,
+  ]);
+  // students must see the republish promptly — drop the cached GET entry
+  const cache = await getCache();
+  await cache.delete(new Request(`${CACHE_ORIGIN}/share/${encodeURIComponent(id)}`));
+  return c.json({ id, hash });
+};
+
 /** POST /share (bearer): store a validated snapshot, answer `{ id, hash }`. */
 export const handleShareCreate: Handler<{ Bindings: Env }> = async (c) => {
   const declared = Number(c.req.header('content-length') ?? '0');

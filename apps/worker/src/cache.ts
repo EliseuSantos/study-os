@@ -6,6 +6,7 @@
 export interface CacheLike {
   match(req: Request): Promise<Response | undefined>;
   put(req: Request, res: Response): Promise<void>;
+  delete(req: Request): Promise<boolean>;
 }
 
 // Minimal local view of the workerd global (no @cloudflare/workers-types here).
