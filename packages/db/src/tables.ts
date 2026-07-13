@@ -65,6 +65,7 @@ export const SYNCED_TABLES = {
       'content_item_id',
       'kind',
       'body_md',
+      'presenter_notes_md',
       'position',
       'updated_at',
       'deleted_at',

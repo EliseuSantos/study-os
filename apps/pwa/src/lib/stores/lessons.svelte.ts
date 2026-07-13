@@ -37,6 +37,7 @@ export interface LessonEditorStore {
   move(item: LessonItemRow, dir: -1 | 1): Promise<void>;
   updateNotes(notes: string): void;
   updateDuration(min: number | null): void;
+  refreshItems(): Promise<void>;
   flush(): void;
   destroy(): void;
 }
@@ -115,6 +116,9 @@ export function createLessonEditorStore(trackId: string, lessonId: string): Less
         await updateLessonItem(db, deviceId, item.id, { position: neighbor.position });
         await updateLessonItem(db, deviceId, neighbor.id, { position: item.position });
       });
+      await itemsLive.refresh();
+    },
+    async refreshItems() {
       await itemsLive.refresh();
     },
     updateNotes(notes: string) {

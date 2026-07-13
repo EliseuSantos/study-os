@@ -54,6 +54,10 @@
     } else if (event.key === 'ArrowLeft') {
       event.preventDefault();
       store.prev();
+    } else if (event.key === 'n') {
+      // roteiro: n alterna o painel do apresentador
+      event.preventDefault();
+      store.togglePresenter();
     }
   }
 
@@ -207,7 +211,17 @@
                 </p>
               </div>
               <div>
-                <p class="type-label text-text-low">notas</p>
+                <p class="type-label text-text-low">roteiro deste slide</p>
+                <div data-testid="presenter-item-notes" class="mt-3 flex flex-col gap-3">
+                  {#each notesParagraphs(item.presenter_notes_md) as p, i (i)}
+                    <p class="font-body text-[15.5px] leading-[1.65] text-text-mid">{p}</p>
+                  {:else}
+                    <p class="type-meta text-text-low">sem roteiro para este slide.</p>
+                  {/each}
+                </div>
+              </div>
+              <div>
+                <p class="type-label text-text-low">notas da aula</p>
                 <div data-testid="presenter-notes" class="mt-3 flex flex-col gap-3">
                   {#each notesParagraphs(store.lesson.presenter_notes_md) as p, i (i)}
                     <p class="font-body text-[15.5px] leading-[1.65] text-text-mid">{p}</p>

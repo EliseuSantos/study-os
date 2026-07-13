@@ -49,6 +49,14 @@ export async function buildTrackSnapshot(trackId: string): Promise<TrackSnapshot
   return snapshot;
 }
 
+/** Students never receive the presenter's script — published copies drop it. */
+function stripPresenterNotes(snapshot: TrackSnapshot): TrackSnapshot {
+  return {
+    ...snapshot,
+    lessons: snapshot.lessons.map((lesson) => ({ ...lesson, presenter_notes_md: null })),
+  };
+}
+
 /** PUT /share/:id (bearer): republish the same link in place. */
 export async function republishSnapshot(
   id: string,
@@ -57,7 +65,7 @@ export async function republishSnapshot(
   const res = await authedFetch(`/share/${id}`, {
     method: 'PUT',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(snapshot),
+    body: JSON.stringify(stripPresenterNotes(snapshot)),
   });
   if (!res.ok) throw new Error(`republish failed: ${res.status}`);
   return (await res.json()) as ShareCreateResult;
@@ -81,7 +89,7 @@ export async function publishSnapshot(snapshot: TrackSnapshot): Promise<ShareCre
   const res = await authedFetch('/share', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(snapshot),
+    body: JSON.stringify(stripPresenterNotes(snapshot)),
   });
   if (!res.ok) throw new Error(`share failed: ${res.status}`);
   const raw = (await res.json()) as { id?: unknown; hash?: unknown };

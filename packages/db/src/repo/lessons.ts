@@ -24,6 +24,7 @@ export interface AddLessonItemInput {
   topic_id?: string | null;
   content_item_id?: string | null;
   body_md?: string | null;
+  presenter_notes_md?: string | null;
   position?: number;
 }
 
@@ -32,6 +33,7 @@ export interface LessonItemPatch {
   topic_id?: string | null;
   content_item_id?: string | null;
   body_md?: string | null;
+  presenter_notes_md?: string | null;
   position?: number;
 }
 
@@ -56,6 +58,7 @@ function rowToLessonItem(r: Row): LessonItemRow {
     content_item_id: (r['content_item_id'] ?? null) as string | null,
     kind: r['kind'] as string,
     body_md: (r['body_md'] ?? null) as string | null,
+    presenter_notes_md: (r['presenter_notes_md'] ?? null) as string | null,
     position: r['position'] as number,
     updated_at: r['updated_at'] as number,
     deleted_at: (r['deleted_at'] ?? null) as number | null,
@@ -147,6 +150,7 @@ export async function addLessonItem(
     content_item_id: input.content_item_id ?? null,
     kind: input.kind,
     body_md: input.body_md ?? null,
+    presenter_notes_md: input.presenter_notes_md ?? null,
     position,
     updated_at: now(),
     deleted_at: null,

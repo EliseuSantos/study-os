@@ -106,6 +106,7 @@ export async function exportTrackData(db: DbDriver, trackId: string): Promise<Tr
       lesson_id: r['lesson_id'] as string,
       topic_id: (r['topic_id'] ?? null) as string | null,
       content_item_id: (r['content_item_id'] ?? null) as string | null,
+      presenter_notes_md: (r['presenter_notes_md'] ?? null) as string | null,
       kind: r['kind'] as string,
       body_md: (r['body_md'] ?? null) as string | null,
       position: r['position'] as number,
@@ -253,6 +254,7 @@ export async function importSnapshot(
       content_item_id: null,
       kind: li.kind,
       body_md: li.body_md,
+      presenter_notes_md: null, // the publisher's script never travels
       position: li.position,
       updated_at: ts,
       deleted_at: null,

@@ -74,6 +74,8 @@ export interface LessonItemRow {
   content_item_id: string | null;
   kind: string;
   body_md: string | null;
+  /** roteiro do apresentador — nunca sai no snapshot/share */
+  presenter_notes_md: string | null;
   position: number;
   updated_at: number;
   deleted_at: number | null;

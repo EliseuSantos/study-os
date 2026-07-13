@@ -1,10 +1,11 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { page } from '$app/state';
-  import { listContentByTopic } from '@studyos/db';
+  import { getOrCreateDeviceId, listContentByTopic, updateLessonItem } from '@studyos/db';
   import type { ContentItemRow, LessonItemRow } from '@studyos/shared';
   import { getDb } from '$lib/db/client';
   import { createLessonEditorStore, type LessonEditorStore } from '$lib/stores/lessons.svelte';
+  import { showToast } from '$lib/stores/toast.svelte';
 
   const trackId = $derived(page.params.id ?? '');
   const lessonId = $derived(page.params.lessonId ?? '');
@@ -185,6 +186,32 @@
     'type-item mt-2 h-(--h-button-md) w-full cursor-pointer rounded-base border border-border bg-surface px-3 text-text-body';
   const moveButtonClass =
     'type-meta shrink-0 cursor-pointer text-text-low transition-colors duration-(--dur-base) ease-brand hover:text-text-hi disabled:cursor-default disabled:opacity-40 disabled:hover:text-text-low';
+
+  // roteiro do apresentador por item — só o professor vê
+  let notesFor = $state<string | null>(null);
+  let notesDraft = $state('');
+
+  function openNotes(item: LessonItemRow): void {
+    if (notesFor === item.id) {
+      notesFor = null;
+      return;
+    }
+    notesFor = item.id;
+    notesDraft = item.presenter_notes_md ?? '';
+  }
+
+  async function saveNotes(): Promise<void> {
+    const id = notesFor;
+    if (id === null) return;
+    const db = await getDb();
+    const deviceId = await getOrCreateDeviceId(db);
+    await updateLessonItem(db, deviceId, id, {
+      presenter_notes_md: notesDraft.trim() === '' ? null : notesDraft.trim(),
+    });
+    await store?.refreshItems();
+    notesFor = null;
+    showToast('roteiro salvo — visível só na sua apresentação', 'success');
+  }
 </script>
 
 <svelte:head>
@@ -271,6 +298,18 @@
             </span>
             <span class="type-item min-w-0 flex-1 truncate text-text-body">{preview(item)}</span>
             <button
+              data-testid="item-notes-toggle"
+              type="button"
+              aria-expanded={notesFor === item.id}
+              title={item.presenter_notes_md === null ? 'adicionar roteiro' : 'editar roteiro'}
+              onclick={() => openNotes(item)}
+              class="type-meta shrink-0 cursor-pointer {item.presenter_notes_md === null
+                ? 'text-text-low'
+                : 'text-accent'} transition-colors duration-(--dur-base) ease-brand hover:text-text-hi"
+            >
+              roteiro
+            </button>
+            <button
               data-testid="lesson-item-up"
               type="button"
               aria-label="mover item para cima"
@@ -302,6 +341,30 @@
           </li>
         {/each}
       </ul>
+
+      {#if notesFor !== null}
+        <div class="mt-3 rounded-base border border-hairline bg-bg p-3.5">
+          <label class="type-label block text-text-low" for="item-notes">
+            roteiro deste slide — visível só na sua apresentação
+          </label>
+          <textarea
+            id="item-notes"
+            data-testid="item-notes-input"
+            bind:value={notesDraft}
+            rows="3"
+            placeholder="lembretes, exemplos, o que falar…"
+            class="type-item mt-2 w-full resize-y rounded-base border border-border bg-surface px-3 py-2 text-text-body placeholder:text-text-low"
+          ></textarea>
+          <button
+            data-testid="item-notes-save"
+            type="button"
+            onclick={() => void saveNotes()}
+            class="type-meta mt-2 cursor-pointer rounded-base border border-border px-3 py-1.5 text-text-mid transition-colors duration-(--dur-base) ease-brand hover:text-text-hi"
+          >
+            salvar roteiro
+          </button>
+        </div>
+      {/if}
 
       {#if items.length === 0}
         <p class="type-item mt-2 text-text-soft">nenhum item ainda — adicione o primeiro.</p>

@@ -270,3 +270,28 @@ describe('parseSnapshot', () => {
     expect('uuid' in parsed.topics[0]!).toBe(false);
   });
 });
+
+test('presenter notes never travel in the snapshot', () => {
+  const built = buildSnapshot(
+    {
+      track: { title: 'T', description: null, mode: 'schedule' },
+      topics: [],
+      cards: [],
+      lessons: [{ id: 'l1', title: 'Aula', presenter_notes_md: 'roteiro da aula', estimated_duration_min: null, position: 0 }],
+      lessonItems: [
+        {
+          id: 'i1',
+          lesson_id: 'l1',
+          topic_id: null,
+          kind: 'text',
+          body_md: 'conteúdo',
+          presenter_notes_md: 'roteiro secreto do slide',
+          position: 0,
+        } as never,
+      ],
+      content: [],
+    },
+    1000,
+  );
+  expect(JSON.stringify(built).includes('roteiro secreto')).toBe(false);
+});
