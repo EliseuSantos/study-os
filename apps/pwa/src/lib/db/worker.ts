@@ -11,6 +11,7 @@ import topicsOriginKeySql from '@studyos/db/migrations/0006_topics_origin_key.sq
 import classesSql from '@studyos/db/migrations/0007_classes.sql?raw';
 import trackFocusSql from '@studyos/db/migrations/0008_track_focus.sql?raw';
 import lessonItemNotesSql from '@studyos/db/migrations/0009_lesson_item_notes.sql?raw';
+import classProgressSql from '@studyos/db/migrations/0010_class_progress.sql?raw';
 import { migrate, type Row, type SqlValue, type Stmt } from '@studyos/db';
 import { DB_CHANNEL, DB_NAME } from '@studyos/shared';
 import type { DbBroadcast, DbReady, DbRequest, DbResponse } from './rpc';
@@ -92,6 +93,7 @@ async function init(): Promise<void> {
     { version: 7, sql: classesSql },
     { version: 8, sql: trackFocusSql },
     { version: 9, sql: lessonItemNotesSql },
+    { version: 10, sql: classProgressSql },
   ]);
 }
 

@@ -30,6 +30,7 @@ const EXPECTED_TABLES = [
   'annotations',
   'question_attempts',
   'classes',
+  'class_progress',
 ];
 
 test('schema applies cleanly and sets user_version to the latest migration', async () => {

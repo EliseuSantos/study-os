@@ -8,10 +8,12 @@
     deleteClass,
     getOrCreateDeviceId,
     listClasses,
+    listTopics,
   } from '@studyos/db';
   import type { ClassRow } from '@studyos/shared';
   import { getDb } from '$lib/db/client';
   import { liveQuery, type LiveQuery } from '$lib/db/live.svelte';
+  import { authedFetch } from '$lib/stores/library.svelte';
   import { buildTrackSnapshot, publishSnapshot } from '$lib/stores/share.svelte';
   import { showToast } from '$lib/stores/toast.svelte';
   import NavIcon from '$lib/components/NavIcon.svelte';
@@ -32,6 +34,50 @@
   let name = $state('');
   let creating = $state(false);
   let qrFor = $state<string | null>(null);
+
+  // cohort aggregates (k>=3 devices; the worker never returns raw rows)
+  interface ClassProgress {
+    count: number;
+    median_done: number;
+    avg_week_minutes: number;
+    topics: { sid: string; done_ratio: number }[];
+  }
+  let progressFor = $state<string | null>(null);
+  let progress = $state<ClassProgress | null>(null);
+  let progressThin = $state(false);
+  let topicTitles = $state<Map<string, string>>(new Map());
+  // a slow earlier fetch must not overwrite a newer open (toggle close/reopen)
+  let progressSeq = 0;
+
+  async function openProgress(cls: ClassRow): Promise<void> {
+    if (progressFor === cls.id) {
+      progressFor = null;
+      return;
+    }
+    const seq = ++progressSeq;
+    progressFor = cls.id;
+    progress = null;
+    progressThin = false;
+    try {
+      const db = await getDb();
+      const topics = await listTopics(db, trackId);
+      const res = await authedFetch(`/class/${cls.share_id}/progress`);
+      if (seq !== progressSeq) return; // a newer open superseded this one
+      topicTitles = new Map(topics.map((t) => [t.id, t.title])); // owner ids ARE the sids
+      if (res.status === 204) {
+        progressThin = true;
+      } else if (res.ok) {
+        progress = (await res.json()) as ClassProgress;
+      } else {
+        showToast('não deu para carregar o progresso da turma', 'error');
+        progressFor = null;
+      }
+    } catch {
+      if (seq !== progressSeq) return;
+      showToast('não deu para carregar o progresso da turma', 'error');
+      progressFor = null;
+    }
+  }
 
   function urlOf(cls: ClassRow): string {
     return `${location.origin}/import?share=${cls.share_id}`;
@@ -114,6 +160,17 @@
             qr
           </button>
           <button
+            data-testid="class-progress-open"
+            type="button"
+            aria-expanded={progressFor === cls.id}
+            aria-label="progresso da turma {cls.name}"
+            title="progresso da turma"
+            onclick={() => void openProgress(cls)}
+            class="type-meta cursor-pointer text-text-low transition-colors duration-(--dur-base) ease-brand hover:text-text-hi"
+          >
+            progresso
+          </button>
+          <button
             data-testid="class-delete"
             type="button"
             aria-label="remover turma {cls.name}"
@@ -132,6 +189,43 @@
           aria-label="link da turma {cls.name}"
           class="type-meta mt-1.5 h-7 w-full rounded-base border border-hairline bg-transparent px-2 text-text-low"
         />
+        {#if progressFor === cls.id}
+          <div
+            data-testid="class-progress-panel"
+            class="mt-2 rounded-base border border-hairline bg-bg p-3"
+          >
+            {#if progressThin}
+              <p data-testid="class-progress-empty" class="type-meta text-text-soft">
+                poucos alunos compartilhando ainda — os números aparecem com 3 ou mais.
+              </p>
+            {:else if progress === null}
+              <p class="type-meta text-text-soft">carregando…</p>
+            {:else}
+              <p data-testid="class-progress-count" class="type-item text-text-body tabular-nums">
+                {progress.count} dispositivos · mediana {progress.median_done} tópicos ·
+                ≈{progress.avg_week_minutes}min/semana
+              </p>
+              <ul role="list" class="mt-2 flex flex-col gap-1.5">
+                {#each progress.topics as row (row.sid)}
+                  <li data-testid="class-progress-topic-row" class="text-[11.5px] text-text-mid">
+                    <span class="flex items-baseline justify-between gap-2">
+                      <span class="min-w-0 truncate">{topicTitles.get(row.sid) ?? 'tópico'}</span>
+                      <span class="shrink-0 text-text-low tabular-nums">
+                        {Math.round(row.done_ratio * 100)}%
+                      </span>
+                    </span>
+                    <span class="mt-0.5 block h-1 rounded-[2px] bg-hairline">
+                      <span
+                        class="block h-1 rounded-[2px] bg-success"
+                        style="width:{row.done_ratio * 100}%"
+                      ></span>
+                    </span>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </div>
+        {/if}
         {#if qrFor === cls.id}
           <div class="mt-2 w-32 overflow-hidden rounded-base bg-white p-1.5">
             <!-- eslint-disable-next-line svelte/no-at-html-tags — uqr emite SVG próprio -->

@@ -52,6 +52,25 @@ No auth. `{ "ok": true }`.
 `settings` (per-device), `topic_deps` and `review_logs` (no `updated_at` column — revisit in
 M2), `oplog`, `server_oplog`, `push_subscriptions`, `track_shares` (server-side only).
 
+## Progresso da turma (agregados anônimos)
+
+Endpoint separado do sync, fora do oplog: `POST /class/:shareId/progress` é
+**público** (o aluno não tem token) e grava uma linha LWW por dispositivo anônimo;
+`GET /class/:shareId/progress` é do professor (bearer) e devolve **apenas
+agregados**. Privacidade por construção:
+
+- **Opt-in do aluno**, desligado por default (`progress_optin`); só envia quando o
+  aluno entrou numa turma (`joined_class`). O envio pega carona no sync.
+- **Identidade anônima**: `anon_id = SHA-256("studyos:<device_id>:<share_id>")` — o
+  servidor nunca vê o `device_id`, e o id difere por turma (sem correlação entre elas).
+- **Piso de k-anonimato = 3**: com menos de 3 dispositivos o GET responde `204` e a
+  UI mostra a cópia calma "poucos alunos compartilhando ainda…". Nunca há linha crua
+  no GET — só contagem, mediana, média de minutos/semana e razão de conclusão por
+  tópico (chaveada pelo `sid` do publisher).
+- **Janela de 30 dias**: linhas paradas há mais de 30 dias saem do agregado.
+- Resposta do GET é `cache-control: no-store` e o service worker não cacheia
+  `/class/*` — o painel do professor nunca fixa um agregado velho.
+
 ## UI contract (for e2e)
 
 Route `/` (Today placeholder in M1):

@@ -1,6 +1,6 @@
 /* StudyOS service worker: offline shell + payload-less web push. */
 
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = `studyos-${VERSION}`;
 const PRECACHE = ['/', '/manifest.webmanifest'];
 
@@ -35,11 +35,13 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Never cache dynamic endpoints: sync protocol, media proxy, share links.
+  // Never cache dynamic endpoints: sync protocol, media proxy, share links,
+  // class-progress aggregates (stale-while-revalidate would pin a 204 forever).
   if (
     url.pathname.startsWith('/sync/') ||
     url.pathname.startsWith('/proxy/') ||
-    url.pathname.startsWith('/share')
+    url.pathname.startsWith('/share') ||
+    url.pathname.startsWith('/class/')
   ) {
     return;
   }

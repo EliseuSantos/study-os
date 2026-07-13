@@ -33,6 +33,7 @@ export default defineConfig({
       '/proxy': workerTarget,
       '/health': workerTarget,
       '/share': workerTarget,
+      '/class': workerTarget,
     },
     ...(labDev
       ? {
@@ -55,6 +56,7 @@ export default defineConfig({
       '/proxy': workerTarget,
       '/health': workerTarget,
       '/share': workerTarget,
+      '/class': workerTarget,
     },
   },
 });

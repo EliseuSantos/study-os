@@ -125,3 +125,50 @@ export async function cardOriginStats(db: DbDriver, fromMs: number): Promise<Car
     fromContent: (r?.['from_content'] ?? 0) as number,
   };
 }
+
+export interface ClassProgressSummary {
+  topics_done: number;
+  topics_total: number;
+  week_minutes: number;
+  /** per publisher-topic (origin_key/sid): 1 when this student mastered it */
+  topics: Record<string, 0 | 1>;
+}
+
+/** Anonymous cohort summary for the track imported from `share:<shareId>`. */
+export async function buildClassProgressSummary(
+  db: DbDriver,
+  shareId: string,
+): Promise<ClassProgressSummary | null> {
+  const tracks = await db.exec(
+    'SELECT id FROM tracks WHERE origin = ? AND deleted_at IS NULL LIMIT 1',
+    [`share:${shareId}`],
+  );
+  const trackId = tracks[0]?.['id'] as string | undefined;
+  if (trackId === undefined) return null;
+
+  const topics = await db.exec(
+    'SELECT status, origin_key FROM topics WHERE track_id = ? AND deleted_at IS NULL',
+    [trackId],
+  );
+  const byKey: Record<string, 0 | 1> = {};
+  let done = 0;
+  for (const t of topics) {
+    const isDone = (t['status'] as string) === 'done';
+    if (isDone) done += 1;
+    const key = t['origin_key'] as string | null;
+    if (key !== null) byKey[key] = isDone ? 1 : 0;
+  }
+
+  const weekAgo = Date.now() - 7 * 86_400_000;
+  const minutes = await db.exec(
+    'SELECT COALESCE(SUM(net_seconds), 0) AS s FROM sessions ' +
+      'WHERE track_id = ? AND started_at >= ? AND deleted_at IS NULL',
+    [trackId, weekAgo],
+  );
+  return {
+    topics_done: done,
+    topics_total: topics.length,
+    week_minutes: Math.round(((minutes[0]?.['s'] ?? 0) as number) / 60),
+    topics: byKey,
+  };
+}

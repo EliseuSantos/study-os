@@ -1,5 +1,5 @@
 import { browser, dev } from '$app/environment';
-import { SYNCED_TABLES, getSetting, syncNow, type Transport } from '@studyos/db';
+import { SYNCED_TABLES, getOrCreateDeviceId, getSetting, syncNow, type Transport } from '@studyos/db';
 import {
   DB_CHANNEL,
   SETTINGS_KEYS,
@@ -7,6 +7,7 @@ import {
   type PushRequest,
   type PushResponse,
 } from '@studyos/shared';
+import { buildClassProgressSummary } from '@studyos/db';
 import { getDb } from '$lib/db/client';
 import type { DbBroadcast } from '$lib/db/rpc';
 
@@ -73,12 +74,48 @@ async function runSync(): Promise<void> {
     nextAllowedAt = 0;
     syncState.status = 'idle';
     syncState.lastSyncAt = Date.now();
+    void postClassProgress(token); // opt-in, anonymous, never blocks the sync
   } catch (error) {
     failures += 1;
     nextAllowedAt = Date.now() + Math.min(BACKOFF_BASE_MS * 2 ** (failures - 1), BACKOFF_MAX_MS);
     syncState.status = 'error';
     if (import.meta.env.DEV) console.error('[sync] fail', error);
     throw error;
+  }
+}
+
+/**
+ * Opt-in anonymous cohort progress: when this device joined a class AND the
+ * student turned sharing on, POST the aggregate summary (salted anon id —
+ * never the device id) after each successful sync. Best-effort.
+ */
+async function postClassProgress(_token: string): Promise<void> {
+  try {
+    const db = await getDb();
+    const [optin, joined] = await Promise.all([
+      getSetting(db, 'progress_optin'),
+      getSetting(db, 'joined_class'),
+    ]);
+    if (optin !== '1' || joined === null) return;
+    const shareId = joined.split(':')[0] ?? '';
+    if (shareId === '') return;
+    const summary = await buildClassProgressSummary(db, shareId);
+    if (summary === null) return;
+    const deviceId = await getOrCreateDeviceId(db);
+    const digest = await crypto.subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(`studyos:${deviceId}:${shareId}`),
+    );
+    const anonId = [...new Uint8Array(digest)]
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+    await fetch(`/class/${shareId}/progress`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ anon_id: anonId, payload: summary }),
+    });
+  } catch {
+    // anonymous progress is best-effort by design
   }
 }
 

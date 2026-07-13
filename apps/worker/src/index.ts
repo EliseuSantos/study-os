@@ -5,6 +5,7 @@ import type { Env } from './env';
 import { handleFirecrawlScrape, handleFirecrawlSearch } from './firecrawl';
 import { handleRss, handleYoutubeSearch, handleYoutubeTranscript } from './proxy';
 import { handleSubscribe, handleVapidKey } from './push';
+import { handleProgressGet, handleProgressPost } from './class-progress';
 import { handleShareCreate, handleShareGet, handleShareUpdate } from './share';
 import { handlePull, handlePush } from './sync';
 
@@ -28,6 +29,9 @@ export function createApp(): Hono<{ Bindings: Env }> {
   app.get('/share/:id', handleShareGet);
   app.post('/share', bearerAuth, handleShareCreate);
   app.put('/share/:id', bearerAuth, handleShareUpdate);
+  // students post anonymously (no token); only the teacher reads aggregates
+  app.post('/class/:shareId/progress', handleProgressPost);
+  app.get('/class/:shareId/progress', bearerAuth, handleProgressGet);
   // Dynamic app routes (run_worker_first patterns without a prerendered file)
   // get the SPA fallback; everything static is served by the assets layer.
   app.get('*', async (c) => {

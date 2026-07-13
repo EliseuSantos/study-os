@@ -19,6 +19,9 @@
   let nameLoaded = $state(false);
   let nameSaved = $state(false);
   let syncToken = $state('');
+  // turma: opt-in de progresso anônimo (só aparece se este device entrou numa turma)
+  let joinedClass = $state<string | null>(null);
+  let progressOptin = $state(false);
   let theme = $state<'dark' | 'light'>('dark');
   let permission = $state<NotificationPermission | 'unsupported'>('default');
   let pushStatus = $state<'idle' | 'busy' | 'active' | 'error'>('idle');
@@ -34,6 +37,8 @@
       .then(async (db) => {
         name = (await getSetting(db, 'profile_name')) ?? '';
         nameLoaded = true;
+        joinedClass = await getSetting(db, 'joined_class');
+        progressOptin = (await getSetting(db, 'progress_optin')) === '1';
       })
       .catch(() => {
         nameLoaded = true;
@@ -104,6 +109,18 @@
           : `sincronizado · ${new Date(syncState.lastSyncAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
     }
   });
+
+  async function toggleProgressOptin(): Promise<void> {
+    progressOptin = !progressOptin;
+    const db = await getDb();
+    await db.batch([setSettingStmt('progress_optin', progressOptin ? '1' : '0')]);
+    showToast(
+      progressOptin
+        ? 'progresso anônimo ligado — o professor vê só agregados'
+        : 'progresso anônimo desligado',
+      'success',
+    );
+  }
 
   async function saveSyncToken(): Promise<void> {
     const value = syncToken.trim();
@@ -339,6 +356,29 @@
         </form>
       </div>
     </div>
+    {#if joinedClass !== null}
+      <div class="setting-row border-t border-hairline">
+        <div class="min-w-0 flex-1">
+          <p class="setting-title">progresso da turma</p>
+          <p class="setting-desc">
+            compartilhar meu progresso (anônimo) com o professor — só agregados, nunca seu nome
+            ou dispositivo.
+          </p>
+        </div>
+        <button
+          data-testid="progress-optin"
+          type="button"
+          role="switch"
+          aria-checked={progressOptin}
+          onclick={() => void toggleProgressOptin()}
+          class="type-meta shrink-0 cursor-pointer rounded-chip border px-3 py-1.5 transition-colors duration-(--dur-base) ease-brand {progressOptin
+            ? 'border-accent bg-accent text-accent-ink'
+            : 'border-border text-text-mid hover:text-text-hi'}"
+        >
+          {progressOptin ? 'ligado' : 'desligado'}
+        </button>
+      </div>
+    {/if}
     <div class="setting-row border-t border-hairline">
       <div>
         <p class="setting-title">seus dados</p>

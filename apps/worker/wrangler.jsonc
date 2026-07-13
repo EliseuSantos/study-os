@@ -13,6 +13,7 @@
       "/proxy/*",
       "/share",
       "/share/*",
+      "/class/*",
       "/health",
       "/import",
       "/library/read",
