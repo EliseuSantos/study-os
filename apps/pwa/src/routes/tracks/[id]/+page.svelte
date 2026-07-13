@@ -2,13 +2,14 @@
   import { untrack } from 'svelte';
   import { SvelteSet } from 'svelte/reactivity';
   import { page } from '$app/state';
-  import { examGoalForTrack, getOrCreateDeviceId, updateTrack } from '@studyos/db';
+  import { examGoalForTrack, getOrCreateDeviceId, listQuizCardsByTrack, updateTrack } from '@studyos/db';
   import { getDb } from '$lib/db/client';
   import { createTrackDetailStore, type TrackDetailStore } from '$lib/stores/tracksDetail.svelte';
   import { buildTopicTree, type TreeActions } from './tree';
   import TopicNode from './TopicNode.svelte';
   import OutlineImport from './OutlineImport.svelte';
   import TopicForm from './TopicForm.svelte';
+  import TopicQuiz from './TopicQuiz.svelte';
   import WhyNote from '$lib/components/WhyNote.svelte';
   import CardsPanel from './CardsPanel.svelte';
   import ErrorsPanel from './ErrorsPanel.svelte';
@@ -38,6 +39,18 @@
       .then((goal) => (examDate = goal?.target_date ?? null))
       .catch(() => {});
   });
+  // track-wide practice over every quiz card
+  let trackQuizCards = $state<import('@studyos/shared').CardRow[]>([]);
+  let trackQuizOpen = $state(false);
+  $effect(() => {
+    const id = trackId;
+    void cards.length;
+    void getDb()
+      .then((db) => listQuizCardsByTrack(db, id))
+      .then((list) => (trackQuizCards = list))
+      .catch(() => {});
+  });
+
   const examDays = $derived(
     examDate === null ? null : Math.max(0, Math.ceil((examDate - Date.now()) / 86_400_000)),
   );
@@ -182,6 +195,20 @@
             </button>
           {/if}
         </div>
+
+        {#if trackQuizCards.length > 0}
+          <div class="border-t border-hairline px-4 py-3.5 lg:px-5">
+            <button
+              data-testid="track-quiz-start"
+              type="button"
+              onclick={() => (trackQuizOpen = true)}
+              class="type-meta w-full cursor-pointer rounded-base border border-border px-3 py-2 text-text-mid transition-colors duration-(--dur-base) ease-brand hover:text-text-hi"
+            >
+              praticar a trilha · {trackQuizCards.length}
+              {trackQuizCards.length === 1 ? 'questão' : 'questões'}
+            </button>
+          </div>
+        {/if}
 
         <div class="border-t border-hairline px-4 py-3.5 lg:px-5">
           <OutlineImport
@@ -349,7 +376,11 @@
                     : 'o conteúdo'}.
                 </p>
               {:else if stageTab === 'cards'}
-                <CardsPanel trackId={track.id}
+                <CardsPanel
+                  trackId={track.id}
+                  onaddQuiz={async (json) => {
+                    await store?.addQuizCard(json);
+                  }}
                   topic={selectedTopic}
                   {cards}
                   onadd={(front, back) => store?.addCard(front, back) ?? Promise.resolve()}
@@ -365,6 +396,15 @@
     </div>
   {/if}
 </div>
+
+{#if trackQuizOpen && track !== null}
+  <TopicQuiz
+    cards={trackQuizCards}
+    trackId={track.id}
+    topicId={null}
+    onClose={() => (trackQuizOpen = false)}
+  />
+{/if}
 
 <style>
   @media (prefers-reduced-motion: no-preference) {

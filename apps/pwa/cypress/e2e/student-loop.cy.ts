@@ -58,6 +58,9 @@ describe('student core loop', () => {
 
   it('reviews the new card from the Today queue', () => {
     cy.visit('/');
+    cy.get('[data-testid="today-queue"]', { timeout: 12_000 })
+      .invoke('text')
+      .then((t) => cy.log('FILA: ' + t.slice(0, 500)));
     cy.get('[data-testid="today-queue"] [data-testid="today-item"]', { timeout: 12_000 }).contains(
       cardFront,
     );

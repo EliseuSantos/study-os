@@ -10,13 +10,16 @@ aulas: o painel do tópico expõe "praticar" (testid `topic-quiz-start`) quando 
 pelo menos 1 card quiz; a sessão apresenta uma questão por vez (opções 1-based na
 UI, `answer` 0-based no dado), corrige imediatamente com feedback calmo e, ao
 final, mostra placar e grava `questions_total/questions_correct` numa sessão do
-tipo questões vinculada à trilha/tópico.
+tipo questões vinculada à trilha/tópico. Cada resposta SHALL também gravar uma
+linha em `question_attempts` (card, correta ou não, timestamp — local-only). A
+trilha PODE oferecer a prática agregada (todos os tópicos, filtro opcional).
 
 #### Scenario: praticar e pontuar
 
 - **WHEN** o usuário responde 8 de 10 questões corretamente e encerra
 - **THEN** o placar "8 de 10" aparece, uma sessão type='questions' é gravada com
-  os números e a acurácia da trilha reflete o resultado
+  os números, a acurácia da trilha reflete o resultado e 10 linhas de
+  `question_attempts` existem
 
 #### Scenario: sem cards quiz
 

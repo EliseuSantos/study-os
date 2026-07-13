@@ -2,7 +2,7 @@
   // Prática de teste por tópico: os cards kind='quiz' saem das aulas e viram
   // sessão avulsa com correção imediata; o placar grava uma sessão de questões
   // (notes='quiz') — acurácia medida, não autorrelatada.
-  import { finishSession, getOrCreateDeviceId, startSession } from '@studyos/db';
+  import { finishSession, getOrCreateDeviceId, recordAttempt, startSession } from '@studyos/db';
   import type { CardRow } from '@studyos/shared';
   import { getDb } from '$lib/db/client';
   import { showToast } from '$lib/stores/toast.svelte';
@@ -17,20 +17,27 @@
   let {
     cards,
     trackId,
-    topicId,
+    topicId = null,
     onClose,
   }: {
     cards: CardRow[];
     trackId: string;
-    topicId: string;
+    /** null = track-wide practice */
+    topicId?: string | null;
     onClose: () => void;
   } = $props();
 
+  interface QuizItem {
+    cardId: string;
+    quiz: Quiz;
+  }
   const questions = $derived(
-    cards.flatMap((card): Quiz[] => {
+    cards.flatMap((card): QuizItem[] => {
       try {
         const parsed = JSON.parse(card.front_md) as Quiz;
-        return parsed.q && Array.isArray(parsed.options) ? [parsed] : [];
+        return parsed.q && Array.isArray(parsed.options)
+          ? [{ cardId: card.id, quiz: parsed }]
+          : [];
       } catch {
         return [];
       }
@@ -44,12 +51,19 @@
   let saving = $state(false);
   const startedAt = Date.now();
 
-  const current = $derived(questions[index] ?? null);
+  const item = $derived(questions[index] ?? null);
+  const current = $derived(item?.quiz ?? null);
 
   function pick(option: number): void {
-    if (picked !== null || current === null) return;
+    if (picked !== null || current === null || item === null) return;
     picked = option;
-    if (option === current.answer) correct += 1;
+    const isCorrect = option === current.answer;
+    if (isCorrect) correct += 1;
+    // per-question local stat (question_attempts never syncs)
+    const cardId = item.cardId;
+    void getDb()
+      .then((db) => recordAttempt(db, cardId, isCorrect, Date.now()))
+      .catch(() => {});
   }
 
   function next(): void {

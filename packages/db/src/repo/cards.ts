@@ -74,6 +74,24 @@ export async function listCardsByTrack(db: DbDriver, trackId: string): Promise<C
   return rows.map(rowToCard);
 }
 
+export interface CardPatch {
+  front_md?: string;
+  back_md?: string | null;
+}
+
+export async function updateCard(
+  db: DbDriver,
+  deviceId: string,
+  id: string,
+  patch: CardPatch,
+): Promise<CardRow | null> {
+  const existing = await getCard(db, id);
+  if (!existing || existing.deleted_at !== null) return null;
+  const updated = { ...existing, ...patch, updated_at: bumpedTs(existing.updated_at) };
+  await localWrite(db, 'cards', updated, deviceId);
+  return updated;
+}
+
 export async function deleteCard(db: DbDriver, deviceId: string, id: string): Promise<void> {
   const existing = await getCard(db, id);
   if (!existing || existing.deleted_at !== null) return;
@@ -110,4 +128,20 @@ export async function listErrorCards(db: DbDriver, trackId: string): Promise<Err
     topic_title: r['topic_title'] as string,
     due_at: (r['due_at'] ?? null) as number | null,
   }));
+}
+
+/** Quiz cards across a whole track (optionally one topic), position order. */
+export async function listQuizCardsByTrack(
+  db: DbDriver,
+  trackId: string,
+  topicId?: string,
+): Promise<CardRow[]> {
+  const rows = await db.exec(
+    'SELECT c.* FROM cards c JOIN topics t ON t.id = c.topic_id ' +
+      "WHERE t.track_id = ? AND c.kind = 'quiz' AND c.deleted_at IS NULL " +
+      (topicId === undefined ? '' : 'AND c.topic_id = ? ') +
+      'ORDER BY t.position ASC, c.created_at ASC, c.id ASC',
+    topicId === undefined ? [trackId] : [trackId, topicId],
+  );
+  return rows.map(rowToCard);
 }

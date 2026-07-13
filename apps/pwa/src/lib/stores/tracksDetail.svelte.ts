@@ -38,6 +38,7 @@ export interface TrackDetailStore {
   importOutline(nodes: OutlineNodeInput[]): Promise<number>;
   cycleStatus(topic: TopicRow): Promise<void>;
   addCard(front: string, back: string): Promise<void>;
+  addQuizCard(frontJson: string): Promise<void>;
   destroy(): void;
 }
 
@@ -112,6 +113,14 @@ export function createTrackDetailStore(trackId: string): TrackDetailStore {
           front_md: frontTrimmed,
           back_md: backTrimmed === '' ? null : backTrimmed,
         }),
+      );
+      await cardsLive.refresh();
+    },
+    async addQuizCard(frontJson: string) {
+      const topicId = selectedTopicId;
+      if (topicId === null || frontJson.trim() === '') return;
+      await withDb((db, deviceId) =>
+        createCard(db, deviceId, { topic_id: topicId, kind: 'quiz', front_md: frontJson }),
       );
       await cardsLive.refresh();
     },

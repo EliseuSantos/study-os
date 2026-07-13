@@ -5,6 +5,7 @@ export * from './migrate';
 export * from './repo/settings';
 export * from './repo/oplog';
 export * from './repo/annotations';
+export * from './repo/attempts';
 export * from './repo/goals';
 export * from './repo/tracks';
 export * from './repo/topics';
