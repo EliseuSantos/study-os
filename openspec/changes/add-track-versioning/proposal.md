@@ -1,5 +1,12 @@
 # Teacher mode: versões de trilha (republicar sem quebrar alunos)
 
+> Nota de revisão (2026-07-12): a *detecção* de versão nova já existe desde o
+> redesign — trilhas importadas guardam `origin`/`origin_version` (hash) e o
+> detalhe da trilha mostra "há uma versão mais nova desta trilha compartilhada"
+> (testid `origin-update-note`). O recorte vivo deste change é o que falta:
+> versão monotônica explícita no snapshot e, principalmente, o **re-import com
+> merge preservando progresso**.
+
 ## Why
 
 Republishing a share today overwrites the snapshot silently; students who imported an
