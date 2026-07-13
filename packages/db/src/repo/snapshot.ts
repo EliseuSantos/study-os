@@ -21,6 +21,7 @@ export interface TrackSnapshotShape {
   format: 'studyos-track';
   version: 1;
   content_version?: number;
+  class_name?: string;
   exported_at: number;
   track: { title: string; description: string | null; mode: string };
   topics: {

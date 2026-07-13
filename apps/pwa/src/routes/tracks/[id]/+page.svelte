@@ -16,6 +16,7 @@
   import CycleEditor from './CycleEditor.svelte';
   import TopicContent from './TopicContent.svelte';
   import LessonsPanel from './LessonsPanel.svelte';
+  import ClassesPanel from './ClassesPanel.svelte';
   import TrackActions from './TrackActions.svelte';
   import MindMap from './MindMap.svelte';
   import TrackGantt from './TrackGantt.svelte';
@@ -220,6 +221,10 @@
 
         <div class="border-t border-hairline px-4 py-3.5 lg:px-5">
           <TrackActions trackId={track.id} />
+        </div>
+
+        <div class="border-t border-hairline px-4 py-3.5 lg:px-5">
+          <ClassesPanel trackId={track.id} />
         </div>
       </div>
 

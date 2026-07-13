@@ -11,6 +11,8 @@ export interface TrackSnapshot {
   version: 1;
   /** monotonic content version set by the publisher (1 when absent) */
   content_version?: number;
+  /** cohort name — students see "você está entrando na turma <name>" */
+  class_name?: string;
   exported_at: number;
   track: { title: string; description: string | null; mode: string };
   topics: {
@@ -317,6 +319,8 @@ export function parseSnapshot(json: string): TrackSnapshot {
   const contentVersionRaw = raw['content_version'];
   const contentVersion =
     contentVersionRaw === undefined ? undefined : finiteNum(contentVersionRaw, 'content_version');
+  const classNameRaw = raw['class_name'];
+  const className = classNameRaw === undefined ? undefined : str(classNameRaw, 'class_name');
 
   const trackRaw = recordAt(raw['track'], 'track');
   const title = str(trackRaw['title'], 'track.title');
@@ -418,6 +422,7 @@ export function parseSnapshot(json: string): TrackSnapshot {
     format: SNAPSHOT_FORMAT,
     version: SNAPSHOT_VERSION,
     ...(contentVersion === undefined ? {} : { content_version: contentVersion }),
+    ...(className === undefined ? {} : { class_name: className }),
     exported_at: exportedAt,
     track,
     topics,

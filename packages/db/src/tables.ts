@@ -97,6 +97,17 @@ export const SYNCED_TABLES = {
       'deleted_at',
     ],
   },
+  classes: {
+    columns: [
+      'id',
+      'track_id',
+      'name',
+      'share_id',
+      'created_at',
+      'updated_at',
+      'deleted_at',
+    ],
+  },
   annotations: {
     columns: [
       'id',

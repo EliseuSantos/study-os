@@ -55,6 +55,14 @@
         origin: `share:${id}`,
         origin_version: data.hash,
       });
+      const className = (data.snapshot as { class_name?: string }).class_name;
+      if (className !== undefined) {
+        // joining is local-only: this device remembers the cohort, no account
+        const { setSettingStmt } = await import('@studyos/db');
+        const { getDb } = await import('$lib/db/client');
+        const db = await getDb();
+        await db.batch([setSettingStmt('joined_class', `${id}:${className}`)]);
+      }
       await goto(`/tracks/${trackId}`);
     } catch {
       status = 'error';
@@ -103,6 +111,11 @@
       <h2 class="mt-2 font-body text-[19px] leading-[1.35] text-text-hi">
         {shared.snapshot.track.title}
       </h2>
+      {#if (shared.snapshot as { class_name?: string }).class_name !== undefined}
+        <p data-testid="import-class-note" class="type-item mt-2 text-accent">
+          você está entrando na turma {(shared.snapshot as { class_name?: string }).class_name}
+        </p>
+      {/if}
       <p class="type-meta mt-3 text-text-mid tabular-nums">
         {shared.snapshot.topics.length} tópicos · {shared.snapshot.cards.length} cards ·
         {shared.snapshot.lessons.length} aulas

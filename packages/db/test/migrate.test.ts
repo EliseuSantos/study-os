@@ -29,6 +29,7 @@ const EXPECTED_TABLES = [
   'proxy_usage',
   'annotations',
   'question_attempts',
+  'classes',
 ];
 
 test('schema applies cleanly and sets user_version to the latest migration', async () => {

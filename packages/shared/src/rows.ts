@@ -224,3 +224,13 @@ export interface OplogRow {
   device_id: string;
   synced: number;
 }
+
+export interface ClassRow {
+  id: string;
+  track_id: string;
+  name: string;
+  share_id: string;
+  created_at: number;
+  updated_at: number;
+  deleted_at: number | null;
+}
