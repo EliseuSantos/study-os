@@ -21,6 +21,8 @@ export const SYNCED_TABLES = {
       'mode',
       'origin',
       'origin_version',
+      'focus_week',
+      'focus_topic_ids',
       'created_at',
       'updated_at',
       'deleted_at',

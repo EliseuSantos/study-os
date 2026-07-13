@@ -22,6 +22,8 @@ export interface TrackSnapshotShape {
   version: 1;
   content_version?: number;
   class_name?: string;
+  /** guided review: ISO week + publisher topic sids in focus */
+  focus?: { week: string; topic_ids: string[] };
   exported_at: number;
   track: { title: string; description: string | null; mode: string };
   topics: {
@@ -149,6 +151,24 @@ export async function importSnapshot(
   const ts = now();
   const stmts: Stmt[] = [];
 
+  const topicIds = new Map<number, string>();
+  const idBySid = new Map<string, string>();
+  for (const t of s.topics) {
+    if (topicIds.has(t.key)) throw new Error(`invalid snapshot: duplicate topic key ${t.key}`);
+    const id = newId();
+    topicIds.set(t.key, id);
+    if (t.sid !== undefined) idBySid.set(t.sid, id);
+  }
+
+  // focus arrives as publisher sids; resolve to the fresh local topic ids
+  const focusIds =
+    s.focus === undefined
+      ? null
+      : s.focus.topic_ids.flatMap((sid) => {
+          const local = idBySid.get(sid);
+          return local === undefined ? [] : [local];
+        });
+
   const track = {
     id: newId(),
     goal_id: null,
@@ -160,14 +180,10 @@ export async function importSnapshot(
     created_at: ts,
     updated_at: ts,
     deleted_at: null,
+    focus_week: s.focus?.week ?? null,
+    focus_topic_ids: focusIds === null || focusIds.length === 0 ? null : JSON.stringify(focusIds),
   } satisfies TrackRow;
   stmts.push(...localWriteStmts('tracks', track, deviceId));
-
-  const topicIds = new Map<number, string>();
-  for (const t of s.topics) {
-    if (topicIds.has(t.key)) throw new Error(`invalid snapshot: duplicate topic key ${t.key}`);
-    topicIds.set(t.key, newId());
-  }
   for (const t of s.topics) {
     const parentId = t.parent_key === null ? null : topicIds.get(t.parent_key);
     if (parentId === undefined) {

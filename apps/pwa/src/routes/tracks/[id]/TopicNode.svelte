@@ -78,6 +78,26 @@
       onclick={() => actions.select(topic.id)}
     >
       {topic.title}
+      {#if actions.isFocused(topic.id)}
+        <span
+          data-testid="focus-chip"
+          class="ml-1.5 rounded-chip bg-(--accent-tint-12) px-1.5 py-0.5 text-[10px] font-semibold text-accent"
+        >
+          foco
+        </span>
+      {/if}
+    </button>
+
+    <button
+      type="button"
+      data-testid="topic-focus-toggle"
+      aria-pressed={actions.isFocused(topic.id)}
+      aria-label="foco da semana em {topic.title}"
+      title="foco da semana"
+      class="add-child icon-btn h-6 w-6 {actions.isFocused(topic.id) ? 'text-accent' : ''}"
+      onclick={() => actions.toggleFocus(topic)}
+    >
+      <NavIcon name="target" size={12} />
     </button>
 
     <button

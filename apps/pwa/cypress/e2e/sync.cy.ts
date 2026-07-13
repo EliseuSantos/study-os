@@ -20,7 +20,8 @@ describe('sync loop', () => {
   });
 
   it('pushes a locally created goal to the worker', () => {
-    const title = `push-e2e-${Date.now()}`;
+    const startedAt = Date.now();
+    const title = `push-e2e-${startedAt}`;
     cy.visit('/settings');
     cy.get('[data-testid="settings-sync-token"]').type('dev-token');
     cy.get('[data-testid="settings-sync-token-save"]').click();
@@ -37,7 +38,9 @@ describe('sync loop', () => {
     // poll the server until it lands instead of pinning down which push carried it
     function probe(attempt: number): void {
       cy.request({
-        url: `${WORKER}/sync/pull?since=0&device=cypress-probe`,
+        // since = test start: the worker accumulates ops across runs and
+        // since=0 pages — the fresh goal would land beyond page one
+        url: `${WORKER}/sync/pull?since=${startedAt - 60_000}&device=cypress-probe`,
         headers: AUTH,
       }).then((res) => {
         const payloads = (res.body.ops as { payload: string }[]).map((o) => o.payload);

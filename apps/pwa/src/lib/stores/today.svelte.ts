@@ -2,6 +2,7 @@ import {
   DAY_MS,
   buildToday,
   currentStreak,
+  isoWeek,
   netSecondsPerDay,
   parseRrule,
   periodComparison,
@@ -104,12 +105,27 @@ async function hadPendingYesterday(
 async function loadFeed(db: DbDriver): Promise<TodayFeed> {
   const now = Date.now();
   const todayMidnight = new Date(now).setHours(0, 0, 0, 0);
-  const [due, routines, topics, reminders] = await Promise.all([
+  const [due, routines, rawTopics, reminders, allTracks] = await Promise.all([
     listDueReviews(db, now),
     listRoutines(db),
     plannerTopics(db),
     dueReminders(db, now),
+    listTracks(db),
   ]);
+  // guided review: current-week focus floats first inside each track's plan
+  const week = isoWeek(now);
+  const focusByTrack = new Map<string, Set<string>>();
+  for (const track of allTracks) {
+    if (track.focus_week !== week || track.focus_topic_ids === null) continue;
+    try {
+      focusByTrack.set(track.id, new Set(JSON.parse(track.focus_topic_ids) as string[]));
+    } catch {
+      // malformed focus json — ignore
+    }
+  }
+  const topics = rawTopics.map((t) =>
+    focusByTrack.get(t.track_id)?.has(t.id) ? { ...t, focused: true } : t,
+  );
   const specs = toSpecs(routines);
   const blocks = replan(specs, topics, todayMidnight, 7).filter((b) => b.day === todayMidnight);
   const items = buildToday(

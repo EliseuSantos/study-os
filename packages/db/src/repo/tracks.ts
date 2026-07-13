@@ -12,6 +12,8 @@ export interface CreateTrackInput {
 
 export interface TrackPatch {
   origin_version?: string | null;
+  focus_week?: string | null;
+  focus_topic_ids?: string | null;
   title?: string;
   description?: string | null;
   mode?: string;
@@ -27,6 +29,8 @@ function rowToTrack(r: Row): TrackRow {
     mode: r['mode'] as string,
     origin: (r['origin'] ?? null) as string | null,
     origin_version: (r['origin_version'] ?? null) as string | null,
+    focus_week: (r['focus_week'] ?? null) as string | null,
+    focus_topic_ids: (r['focus_topic_ids'] ?? null) as string | null,
     created_at: r['created_at'] as number,
     updated_at: r['updated_at'] as number,
     deleted_at: (r['deleted_at'] ?? null) as number | null,
@@ -47,6 +51,8 @@ export async function createTrack(
     mode: input.mode ?? 'schedule',
     origin: null,
     origin_version: null,
+    focus_week: null,
+    focus_topic_ids: null,
     created_at: ts,
     updated_at: ts,
     deleted_at: null,

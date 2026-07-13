@@ -19,6 +19,9 @@ export interface TrackRow {
   mode: string;
   origin: string | null;
   origin_version: string | null;
+  /** guided review: teacher's focus window (ISO week) + topic ids (JSON array) */
+  focus_week: string | null;
+  focus_topic_ids: string | null;
   created_at: number;
   updated_at: number;
   deleted_at: number | null;

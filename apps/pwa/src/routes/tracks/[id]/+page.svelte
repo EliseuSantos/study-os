@@ -11,6 +11,8 @@
   import TopicForm from './TopicForm.svelte';
   import TopicQuiz from './TopicQuiz.svelte';
   import WhyNote from '$lib/components/WhyNote.svelte';
+  import { isoWeek } from '@studyos/core';
+  import { showToast } from '$lib/stores/toast.svelte';
   import CardsPanel from './CardsPanel.svelte';
   import ErrorsPanel from './ErrorsPanel.svelte';
   import CycleEditor from './CycleEditor.svelte';
@@ -76,9 +78,44 @@
   const doneCount = $derived(topics.filter((t) => t.status === 'done').length);
   const pct = $derived(topics.length === 0 ? 0 : Math.round((doneCount / topics.length) * 100));
 
+  // guided review: current-week focus set lives on the track row
+  const focusSet = $derived.by(() => {
+    const t = track;
+    if (t === null || t.focus_week !== isoWeek(Date.now()) || t.focus_topic_ids === null) {
+      return new Set<string>();
+    }
+    try {
+      return new Set(JSON.parse(t.focus_topic_ids) as string[]);
+    } catch {
+      return new Set<string>();
+    }
+  });
+
+  async function toggleFocus(topicId: string): Promise<void> {
+    const t = track;
+    if (t === null) return;
+    const week = isoWeek(Date.now());
+    const current = t.focus_week === week ? [...focusSet] : [];
+    const next = current.includes(topicId)
+      ? current.filter((id) => id !== topicId)
+      : [...current, topicId];
+    if (next.length > 5) {
+      showToast('foco da semana vai até 5 tópicos — menos é mais', 'info');
+      return;
+    }
+    const db = await getDb();
+    const deviceId = await getOrCreateDeviceId(db);
+    await updateTrack(db, deviceId, t.id, {
+      focus_week: next.length === 0 ? null : week,
+      focus_topic_ids: next.length === 0 ? null : JSON.stringify(next),
+    });
+  }
+
   const actions: TreeActions = {
     select: (id) => store?.selectTopic(id),
     cycleStatus: (topic) => void store?.cycleStatus(topic),
+    toggleFocus: (topic) => void toggleFocus(topic.id),
+    isFocused: (id) => focusSet.has(id),
     toggleCollapsed: (id) => {
       if (collapsed.has(id)) collapsed.delete(id);
       else collapsed.add(id);

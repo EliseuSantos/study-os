@@ -14,6 +14,8 @@ export interface TreeActions {
   openChildForm(id: string): void;
   closeForm(): void;
   submitChild(parentId: string | null, title: string): Promise<void>;
+  toggleFocus(topic: TopicRow): void;
+  isFocused(id: string): boolean;
 }
 
 function setDepth(nodes: TopicNodeData[], depth: number): void {

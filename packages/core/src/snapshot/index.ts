@@ -13,6 +13,8 @@ export interface TrackSnapshot {
   content_version?: number;
   /** cohort name — students see "você está entrando na turma <name>" */
   class_name?: string;
+  /** guided review: ISO week + publisher topic sids in focus */
+  focus?: { week: string; topic_ids: string[] };
   exported_at: number;
   track: { title: string; description: string | null; mode: string };
   topics: {
@@ -321,6 +323,17 @@ export function parseSnapshot(json: string): TrackSnapshot {
     contentVersionRaw === undefined ? undefined : finiteNum(contentVersionRaw, 'content_version');
   const classNameRaw = raw['class_name'];
   const className = classNameRaw === undefined ? undefined : str(classNameRaw, 'class_name');
+  const focusRaw = raw['focus'];
+  let focus: { week: string; topic_ids: string[] } | undefined;
+  if (focusRaw !== undefined) {
+    const f = recordAt(focusRaw, 'focus');
+    focus = {
+      week: str(f['week'], 'focus.week'),
+      topic_ids: arrayOf(f['topic_ids'], 'focus.topic_ids').map((v, i) =>
+        str(v, `focus.topic_ids[${i}]`),
+      ),
+    };
+  }
 
   const trackRaw = recordAt(raw['track'], 'track');
   const title = str(trackRaw['title'], 'track.title');
@@ -423,6 +436,7 @@ export function parseSnapshot(json: string): TrackSnapshot {
     version: SNAPSHOT_VERSION,
     ...(contentVersion === undefined ? {} : { content_version: contentVersion }),
     ...(className === undefined ? {} : { class_name: className }),
+    ...(focus === undefined ? {} : { focus }),
     exported_at: exportedAt,
     track,
     topics,

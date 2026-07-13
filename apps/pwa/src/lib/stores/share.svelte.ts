@@ -28,7 +28,25 @@ export function slugify(title: string): string {
 export async function buildTrackSnapshot(trackId: string): Promise<TrackSnapshot> {
   const db = await getDb();
   const data = await exportTrackData(db, trackId);
-  return buildSnapshot(data);
+  const snapshot = buildSnapshot(data);
+  // guided review: publish the current-week focus (owner topic ids are the sids)
+  const { getTrack } = await import('@studyos/db');
+  const { isoWeek } = await import('@studyos/core');
+  const track = await getTrack(db, trackId);
+  if (
+    track !== null &&
+    track.focus_week !== null &&
+    track.focus_week === isoWeek(Date.now()) &&
+    track.focus_topic_ids !== null
+  ) {
+    try {
+      const ids = JSON.parse(track.focus_topic_ids) as string[];
+      if (ids.length > 0) snapshot.focus = { week: track.focus_week, topic_ids: ids };
+    } catch {
+      // malformed focus json: publish without it
+    }
+  }
+  return snapshot;
 }
 
 /** PUT /share/:id (bearer): republish the same link in place. */

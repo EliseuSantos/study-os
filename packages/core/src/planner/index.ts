@@ -100,6 +100,8 @@ export interface PlannerTopic {
   status: 'pending' | 'studying' | 'done';
   position: number;
   deps: string[];
+  /** teacher's focus-of-the-week (current ISO week only) — floats first */
+  focused?: boolean;
 }
 
 export interface PlanBlock {
@@ -131,7 +133,10 @@ function orderTopics(topics: PlannerTopic[]): PlannerTopic[] {
     remainingDeps.set(t.id, new Set(t.deps.filter((d) => ids.has(d) && d !== t.id)));
   }
 
-  const pending = unfinished.toSorted(byPosition);
+  // focus-of-the-week floats first; deps still gate (only ready topics get picked)
+  const pending = unfinished.toSorted(
+    (a, b) => Number(b.focused ?? false) - Number(a.focused ?? false) || byPosition(a, b),
+  );
   const done = new Set<string>();
   const out: PlannerTopic[] = [];
   while (out.length < unfinished.length) {
@@ -373,3 +378,34 @@ export function forecastReviewLoad(
 
 /** Suggest an extra review block when a day's projected load crosses this. */
 export const FORECAST_SUGGEST_THRESHOLD = 30;
+
+// ---- guided review (foco da semana) ----------------------------------------
+
+/** ISO-8601 week stamp, e.g. "2026-W28" — the focus window's identity. */
+export function isoWeek(nowMs: number): string {
+  const d = new Date(nowMs);
+  // ISO week: Thursday of the current week decides the year
+  const thursday = new Date(d);
+  thursday.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+  const yearStart = new Date(thursday.getFullYear(), 0, 1);
+  const week = Math.ceil(((thursday.getTime() - yearStart.getTime()) / DAY_MS + 1) / 7);
+  return `${thursday.getFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
+/**
+ * Focus-first ordering: among unfinished topics, the teacher's focus set for
+ * the CURRENT iso week floats to the front; dependency order still wins (a
+ * focused topic never jumps ahead of its unmet deps). Stale weeks are inert.
+ */
+export function applyFocusOrder<T extends { id: string }>(
+  topics: T[],
+  focusTopicIds: string[],
+  focusWeek: string | null,
+  nowMs: number,
+): T[] {
+  if (focusWeek === null || focusWeek !== isoWeek(nowMs) || focusTopicIds.length === 0) {
+    return topics;
+  }
+  const focus = new Set(focusTopicIds);
+  return [...topics.filter((t) => focus.has(t.id)), ...topics.filter((t) => !focus.has(t.id))];
+}
